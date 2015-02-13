@@ -199,7 +199,7 @@ public class PlayerControl : MonoBehaviour {
 
         //air friction
         if (inAir)
-            rigidbody2D.AddForce(new Vector2(rigidbody2D.velocity.x / 10, rigidbody2D.velocity.y));
+            rigidbody2D.AddForce(new Vector2(-(rigidbody2D.velocity.x / 10), 0));
 
         if (jump)
         {
