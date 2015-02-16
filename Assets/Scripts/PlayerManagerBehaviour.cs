@@ -19,7 +19,6 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
     private PlayerFollower camera;
 
-    private GameObject[] changingColorObjects;
     private GameObject[] fadingColorObjects;
 
     private int winner;
@@ -44,12 +43,13 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             this.enabled = false;
         }
 
-        changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
         fadingColorObjects = GameObject.FindGameObjectsWithTag("FadingColor");
     }
 
     public void startGame()
     {
+        GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
+
         //spawn 2 players and set them up
         p1 = Instantiate(player, spawn1.position, Quaternion.identity) as GameObject;
         p2 = Instantiate(player, spawn2.position, Quaternion.identity) as GameObject;
@@ -65,8 +65,11 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         p1Control.setDebug(debug);
         p2Control.setDebug(debug);
 
-        p1Control.setPlayer(1, 2, Color.red);
-        p2Control.setPlayer(2, 1, Color.blue);
+        Color cameaBG = Camera.main.backgroundColor;
+        Color inverseCameraBg = new Color(1.0f-cameaBG.r, 1.0f-cameaBG.g, 1.0f-cameaBG.b);
+
+        p1Control.setPlayer(1, 2, inverseCameraBg);
+        p2Control.setPlayer(2, 1, inverseCameraBg);
         
         p1Control.enabled = false;
         p2Control.enabled = false;
@@ -78,7 +81,6 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         InvokeRepeating("countdown", 0, 1f);
 
-        print(changingColorObjects.Length);
         foreach (GameObject obj in changingColorObjects)
         {
             obj.SendMessage("startFade");
@@ -111,19 +113,31 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         GUI.skin = skin;
 
         if (countDown > 0)
-            GUI.Label(new Rect((Screen.width / 2) - 25, Screen.height / 2, 50, 30), countDown.ToString());
+        {
+            GUI.Label(new Rect((Screen.width / 2) - 23, Screen.height / 2 + 2, 50, 30), "<color=black>" + countDown.ToString() + "</color>");
+            GUI.Label(new Rect((Screen.width / 2) - 25, Screen.height / 2, 50, 30), "<color=white>" + countDown.ToString() + "</color>");
+        }
 
         if (countDown == 0)
+        {
+            GUI.Label(new Rect((Screen.width / 2) - 48, Screen.height / 2 + 2, 100, 30), "<color=black>GO!</color>");
             GUI.Label(new Rect((Screen.width / 2) - 50, Screen.height / 2, 100, 30), "<color=yellow>GO!</color>");
+        }
 
         if (p1Control && p2Control)
         {
-            GUI.Label(new Rect(Screen.width - 60, 50 / 10, 50, 30), p2Control.getScore().ToString());
-            GUI.Label(new Rect(10, 50 / 10, 50, 30), p1Control.getScore().ToString());
+            GUI.Label(new Rect(Screen.width - 58, 52 / 10, 50, 30), "<color=black>" + p2Control.getScore().ToString() + "</color>");
+            GUI.Label(new Rect(Screen.width - 60, 50 / 10, 50, 30), "<color=white>" + p2Control.getScore().ToString() + "</color>");
+
+            GUI.Label(new Rect(8, 52 / 10, 50, 30), "<color=black>" + p1Control.getScore().ToString() + "</color>");
+            GUI.Label(new Rect(10, 50 / 10, 50, 30), "<color=white>" + p1Control.getScore().ToString() + "</color>");
         }
 
-        if (winner != 0)            
-            GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2,  500, 50), "Player " + winner + " has won!");
+        if (winner != 0)
+        {
+            GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50), "<color=black>Player " + winner + " has won!</color>");
+            GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50), "<color=white>Player " + winner + " has won!</color>");
+        }
     }
 
     public void playerLost(int playerNo)

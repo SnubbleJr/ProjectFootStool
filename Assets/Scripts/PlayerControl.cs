@@ -9,6 +9,7 @@ public class PlayerControl : MonoBehaviour {
     public float fastFallForce;
     public float moveForce;
     public float maxSpeed;
+    public float wallFrictionForce;
 
     public AudioClip jumpSound;
     public AudioClip dJumpSound;
@@ -21,8 +22,12 @@ public class PlayerControl : MonoBehaviour {
     private bool hit = false;
     private bool dead = false;
     private bool grounded = false;
-    private bool jump = false;              //jump and double jump are technically flags so we can apply force in fixed update
+    private bool onWall = false;
+    private bool onLeftWall;
+    private bool onRightWall;
+    private bool jump = false;           //jump and double jump are technically flags so we can apply force in fixed update
     private bool doubleJump = false;
+    private bool hasJumped = true;   //a state for if we have already double jumped still needs to be held.
     private bool hasDoubleJumped = true;   //a state for if we have already double jumped still needs to be held.
     private bool inAir = true;
     private bool landed = false;
@@ -33,13 +38,22 @@ public class PlayerControl : MonoBehaviour {
 
     private Vector2 playerTopLeft;
     private Vector2 playerTopRight;
+    private Vector2 playerBottomLeft;
+    private Vector2 playerBottomRight;
 
     private Transform headCheckLeft;
     private Transform headCheckRight;
     private Transform groundCheck;
 
+    private Transform sideCheckLeft;
+    private Transform sideCheckRight;
+
+    private Transform sideCheckTopLeft;
+    private Transform sideCheckBottomLeft;
+    private Transform sideCheckTopRight;
+    private Transform sideCheckBottomRight;
+
     private string horizontalAxis = "Horizontal";
-    private string verticalAxis = "Vertical";
     private string jumpKey = "Jump";
     private string rightKey = "Right";
     private string leftKey = "Left";
@@ -51,7 +65,9 @@ public class PlayerControl : MonoBehaviour {
 
     private Animator anim;
 
-    private ParticleSystem particleSystem;
+    private ParticleSystem groundParticleSystem;
+    private ParticleSystem wallLeftParticleSystem;
+    private ParticleSystem wallRightParticleSystem;
     
 	// Use this for initialization
     void Awake()
@@ -59,6 +75,15 @@ public class PlayerControl : MonoBehaviour {
         headCheckLeft = transform.FindChild("HeadCheckL");
         headCheckRight = transform.FindChild("HeadCheckR");
         groundCheck = transform.FindChild("GroundCheck");
+
+        sideCheckLeft = transform.FindChild("SideCheckL");
+        sideCheckRight = transform.FindChild("SideCheckR");
+
+        sideCheckTopLeft = sideCheckLeft.transform.FindChild("SideCheckLU");
+        sideCheckBottomLeft = sideCheckLeft.transform.FindChild("SideCheckLL");
+        sideCheckTopRight = sideCheckRight.transform.FindChild("SideCheckRU");
+        sideCheckBottomRight = sideCheckRight.transform.FindChild("SideCheckRL");
+
         sprite = transform.FindChild("Sprite").gameObject;
 
         if (groundCheck == null || headCheckLeft == null || headCheckRight == null || sprite == null)
@@ -74,13 +99,18 @@ public class PlayerControl : MonoBehaviour {
         }
 
         anim = GetComponent<Animator>();
-        particleSystem = GetComponentInChildren<ParticleSystem>();
+        groundParticleSystem = groundCheck.GetComponentInChildren<ParticleSystem>();
+        wallLeftParticleSystem = sideCheckLeft.GetComponentInChildren<ParticleSystem>();
+        wallRightParticleSystem = sideCheckRight.GetComponentInChildren<ParticleSystem>();
 	}
 
 	void Update ()
     {
+        //get player boundries - HAS to be in update
         playerTopLeft = new Vector2(transform.position.x - rigidbody2D.collider2D.bounds.extents.x, transform.position.y + rigidbody2D.collider2D.bounds.extents.y);
         playerTopRight = new Vector2(transform.position.x + rigidbody2D.collider2D.bounds.extents.x, transform.position.y + rigidbody2D.collider2D.bounds.extents.y);
+        playerBottomLeft = new Vector2(transform.position.x - rigidbody2D.collider2D.bounds.extents.x, transform.position.y - rigidbody2D.collider2D.bounds.extents.y);
+        playerBottomRight = new Vector2(transform.position.x + rigidbody2D.collider2D.bounds.extents.x, transform.position.y - rigidbody2D.collider2D.bounds.extents.y);
 
         if (debug)
         {
@@ -88,7 +118,24 @@ public class PlayerControl : MonoBehaviour {
         }
 
         hit = Physics2D.Linecast(playerTopLeft, headCheckLeft.position, opponentLayerMask) || Physics2D.Linecast(playerTopRight, headCheckRight.position, opponentLayerMask);
-        grounded = Physics2D.Linecast(transform.position, groundCheck.position, (1 << LayerMask.NameToLayer("Ground")));
+
+        grounded = Physics2D.Linecast(transform.position, groundCheck.position, (1 << LayerMask.NameToLayer("Ground"))) || Physics2D.Linecast(transform.position, groundCheck.position, (1 << LayerMask.NameToLayer("Wall")));
+
+        onLeftWall = Physics2D.Linecast(playerTopLeft, sideCheckTopLeft.position, (1 << LayerMask.NameToLayer("Wall"))) || Physics2D.Linecast(playerBottomLeft, sideCheckBottomLeft.position, (1 << LayerMask.NameToLayer("Wall")));
+        onRightWall = Physics2D.Linecast(playerTopRight, sideCheckTopRight.position, (1 << LayerMask.NameToLayer("Wall"))) || Physics2D.Linecast(playerBottomRight, sideCheckBottomRight.position, (1 << LayerMask.NameToLayer("Wall")));
+
+        onWall = onLeftWall || onRightWall;
+
+        //if on wall, set gorunded, so we can jump again
+        if (onWall)
+        {
+            //if we're on the ground, then don't set landed
+            if (!grounded)
+                landed = true;
+
+            grounded = true;
+            inAir = false;
+        }
 
         if (grounded)
         {
@@ -96,10 +143,14 @@ public class PlayerControl : MonoBehaviour {
                 landed = true;
 
             inAir = false;
+            hasJumped = false;
             hasDoubleJumped = false;
         }
         else
+        {
+            inAir = true;
             landed = false;
+        }
 
         //direction input fixing
         if (Input.GetButtonDown(leftKey))
@@ -109,13 +160,13 @@ public class PlayerControl : MonoBehaviour {
         if (Input.GetButtonUp(rightKey) || Input.GetButtonUp(leftKey))
             lastPressed = 0;
 
-        down = Input.GetButton(downKey);
+        down = Input.GetButton(downKey) || Input.GetAxisRaw(downKey) == 1;
 
         //if jump pressed
         if(Input.GetButtonDown(jumpKey))
         {
             //if grounded, normal jump, else double jump if can
-            if (grounded)
+            if (!hasJumped)
                 jump = true;
             else if (!hasDoubleJumped)
                 doubleJump = true;
@@ -138,7 +189,7 @@ public class PlayerControl : MonoBehaviour {
         audio.PlayOneShot(deathSound);
         
         dead = true;
-        sprite.renderer.material.color = Color.white;
+        sprite.renderer.material.color = Color.black;
         GetComponent<BoxCollider2D>().enabled = false;
         anim.SetTrigger("Dead");
 
@@ -151,14 +202,19 @@ public class PlayerControl : MonoBehaviour {
         // Cache the input.
         float h = Input.GetAxisRaw(horizontalAxis);
 
+        // Snapping for analogsticks
+        if (h > 0)
+            h = 1;
+        if (h < 0)
+            h = -1;
+
         // the last key to be pressed takes priority
         if (h == 0)
             h = lastPressed;
-
+        
         // If the player is holding down, apply fall force
         if (down)
             rigidbody2D.AddForce(Vector2.up *-1 * fastFallForce);
-
 
         // If the player is changing direction or letting go of controls, stop all horizontal movement, but only on ground
         if (h != Mathf.Sign(rigidbody2D.velocity.x) & !inAir)
@@ -181,33 +237,54 @@ public class PlayerControl : MonoBehaviour {
 
     void jumpHandler()
     {
-        float v = Input.GetAxisRaw(verticalAxis);
+        bool letGoOfJump = Input.GetButtonUp(jumpKey);
+
+        //if attached to a wall, start sliding them down
+        if (onWall)
+            rigidbody2D.AddForce(new Vector2(0, -wallFrictionForce));
+        
+        //if hit wall with force, play sound and particles, and screen shake
+        if (landed && onWall)
+        {
+            landed = false;
+
+            //fix wall jumping not reseting double jumps
+            //hasDoubleJumped = false;
+            //landing sound
+
+            //screen shake
+            if (onRightWall)
+                wallRightParticleSystem.Play();
+            if (onLeftWall)
+                wallLeftParticleSystem.Play();
+        }
 
         //if hit ground with force, play sound and particles, and screen shake
         if (rigidbody2D.velocity.y < 0.2f && landed)
         {
             landed = false;
             //landing sound
-            //particleSystem.renderer.material.color = color;
-            particleSystem.Play();
+            groundParticleSystem.Play();
             //screen shake
         }
         
         //if jump is let go and we are jumping up, then stop veritcal movement
-        if (rigidbody2D.velocity.y > 0 && v == 0)
+        if (rigidbody2D.velocity.y > 0 && letGoOfJump)
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0f);
 
         //air friction
         if (inAir)
-            rigidbody2D.AddForce(new Vector2(-(rigidbody2D.velocity.x / 10), 0));
+            rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x), 0));
 
         if (jump)
         {
             audio.PlayOneShot(jumpSound);
 
+            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
             rigidbody2D.AddForce(new Vector2(0f, jumpForce));
             jump = false;
             inAir = true;
+            hasJumped = true;
         }
         if (doubleJump)
         {
@@ -236,13 +313,21 @@ public class PlayerControl : MonoBehaviour {
         Debug.DrawLine(headCheckLeft.position, headCheckRight.position, Color.red);
         Debug.DrawLine(playerTopRight, headCheckRight.position, Color.red);
 
+        Debug.DrawLine(playerTopLeft, sideCheckTopLeft.position, Color.blue);
+        Debug.DrawLine(sideCheckTopLeft.position, sideCheckBottomLeft.position, Color.blue);
+        Debug.DrawLine(sideCheckBottomLeft.position, playerBottomLeft, Color.blue);
+
+        Debug.DrawLine(playerTopRight, sideCheckTopRight.position, Color.blue);
+        Debug.DrawLine(sideCheckTopRight.position, sideCheckBottomRight.position, Color.blue);
+        Debug.DrawLine(sideCheckBottomRight.position, playerBottomRight, Color.blue);
+
         Debug.DrawLine(transform.position, groundCheck.position);
     }
 
     public void respawn()
     {
         dead = false;
-        //sprite.renderer.material.color = color;
+        sprite.renderer.material.color = color;
         GetComponent<BoxCollider2D>().enabled = true;
         lastPressed = 0;
         anim.SetTrigger("Reset");
@@ -256,6 +341,10 @@ public class PlayerControl : MonoBehaviour {
     public void setPlayer(int playerNumber, int opponentNumber, Color pColor)
     {
         color = pColor;
+        sprite.renderer.material.color = color;
+        groundParticleSystem.startColor = color;
+        wallLeftParticleSystem.startColor = color;
+        wallRightParticleSystem.startColor = color;
 
         playerNo = playerNumber;
 
@@ -263,7 +352,6 @@ public class PlayerControl : MonoBehaviour {
 
         //set up the inputs for this player
         horizontalAxis = "P" + playerNumber + horizontalAxis;
-        verticalAxis = "P" + playerNumber + verticalAxis;
         jumpKey = "P" + playerNumber + jumpKey;
         rightKey = "P" + playerNumber + rightKey;
         leftKey = "P" + playerNumber + leftKey;
