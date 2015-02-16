@@ -43,16 +43,16 @@ public class MainMenu : MonoBehaviour {
             Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, cameraPos, zoomSpeed * Time.deltaTime);
 
             if (Input.GetButtonDown("Submit"))
-                startGame();
+                networkView.RPC("startGame", RPCMode.AllBuffered);
         }
 	}
 
+    [RPC]
     private void startGame()
     {
         inGame = true;
         playerManager.enabled = true;
-        playerFollower.enabled = true;
-        playerManager.startGame();
+        playerManager.PMBstartGame();
         Camera.main.transform.rotation = Quaternion.identity;
     }
 

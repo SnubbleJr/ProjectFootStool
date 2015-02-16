@@ -17,7 +17,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     private PlayerControl p1Control;
     private PlayerControl p2Control;
 
-    private PlayerFollower camera;
+    private PlayerFollower cameraPlayerFollower;
 
     private GameObject[] fadingColorObjects;
 
@@ -46,33 +46,18 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         fadingColorObjects = GameObject.FindGameObjectsWithTag("FadingColor");
     }
 
-    public void startGame()
+    public void PMBstartGame()
     {
         GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
 
-        //spawn 2 players and set them up
-        p1 = Instantiate(player, spawn1.position, Quaternion.identity) as GameObject;
-        p2 = Instantiate(player, spawn2.position, Quaternion.identity) as GameObject;
+        //find camera
+        cameraPlayerFollower = Camera.main.GetComponent<PlayerFollower>();
+        cameraPlayerFollower.setDebug(debug);
 
-        //find camera and give it the players
-        camera = Camera.main.GetComponent<PlayerFollower>();
-        camera.setPlayers(p1.transform, p2.transform);
+        spawnPlayers();
 
-        p1Control = p1.GetComponent<PlayerControl>();
-        p2Control = p2.GetComponent<PlayerControl>();
-
-        camera.setDebug(debug);
-        p1Control.setDebug(debug);
-        p2Control.setDebug(debug);
-
-        Color cameaBG = Camera.main.backgroundColor;
-        Color inverseCameraBg = new Color(1.0f-cameaBG.r, 1.0f-cameaBG.g, 1.0f-cameaBG.b);
-
-        p1Control.setPlayer(1, 2, inverseCameraBg);
-        p2Control.setPlayer(2, 1, inverseCameraBg);
-        
-        p1Control.enabled = false;
-        p2Control.enabled = false;
+        if (Network.connections.Length == 0)
+            cameraPlayerFollower.enabled = true;
 
         //reseting values for when we start again
         Time.timeScale = 1;
@@ -86,6 +71,34 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             obj.SendMessage("startFade");
         }
 
+    }
+
+    public void spawnPlayers()
+    {
+        Color cameaBG = Camera.main.backgroundColor;
+        Color inverseCameraBg = new Color(1.0f - cameaBG.r, 1.0f - cameaBG.g, 1.0f - cameaBG.b);
+
+        //spawn 2 players and set them up
+        if (Network.connections.Length == 0)
+        {
+            p1 = Network.Instantiate(player, spawn1.position, Quaternion.identity, 0) as GameObject;
+            p1Control = p1.GetComponent<PlayerControl>();
+            p1Control.setDebug(debug);
+            p1Control.setPlayer(1, 2, inverseCameraBg);
+            p1Control.enabled = false;
+
+            cameraPlayerFollower.setPlayer(p1.transform, 1);
+        }
+        else
+        {
+            p2 = Network.Instantiate(player, spawn2.position, Quaternion.identity, 0) as GameObject;
+            p2Control = p2.GetComponent<PlayerControl>();
+            p2Control.setDebug(debug);
+            p2Control.setPlayer(2, 1, inverseCameraBg);
+            p2Control.enabled = false;
+
+            cameraPlayerFollower.setPlayer(p2.transform, 2);
+        }
     }
 
     private void countdown()
@@ -103,8 +116,10 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         //checked at 0, so players are active on go
         if (countDown == 0)
         {
-            p1Control.enabled = true;
-            p2Control.enabled = true;
+            if (p1 != null)
+                p1Control.enabled = true;
+            if (p2 != null)
+                p2Control.enabled = true;
         }
     }
 
@@ -155,12 +170,12 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         //if player 1 lost
         if (playerNo == p1Control.getPlayerNo())
         {
-            camera.zoomInOnWinner(p2.transform);
+            cameraPlayerFollower.zoomInOnWinner(p2.transform);
             p2Control.increaseScore();
         }
         else
         {
-            camera.zoomInOnWinner(p1.transform);
+            cameraPlayerFollower.zoomInOnWinner(p1.transform);
             p1Control.increaseScore();
         }
         
@@ -182,7 +197,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             obj.SendMessage("setFade", false);
         }
 
-        camera.resetZoom();
+        cameraPlayerFollower.resetZoom();
 
         p1.transform.position = spawn1.position;
         p2.transform.position = spawn2.position;

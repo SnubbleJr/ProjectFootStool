@@ -89,10 +89,17 @@ public class PlayerFollower : MonoBehaviour {
         Debug.DrawLine(camera.ViewportToWorldPoint(new Vector3(rect.xMin, rect.yMax, 1)), camera.ViewportToWorldPoint(new Vector3(rect.xMin, rect.yMin, 1)), color);
     }
 
-    public void setPlayers(Transform player1, Transform player2)
+    public void setPlayer(Transform player, int id)
     {
-        p1 = player1;
-        p2 = player2;
+        switch (id)
+        {
+            case 1:
+                p1 = player;
+                break;
+            case 2:
+                p2 = player;
+                break;
+        }
     }
 
     public void zoomInOnWinner(Transform winner)
