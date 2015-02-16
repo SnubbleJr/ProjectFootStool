@@ -1,0 +1,9 @@
+Ver.	Jump force	FF force	Move force	Max speed	Wall slide	Notes
+
+1.0
+
+1.1	300		100		50		5		-		Added short hopping, air resistance
+
+1.2	300		100		50		5		15		Added wall jumping
+
+1.3

@@ -6,6 +6,7 @@ public class PlayerControl : MonoBehaviour {
     private bool debug;
 
     public float jumpForce;
+    public float jumpHeight = 1.5f;
     public float fastFallForce;
     public float moveForce;
     public float maxSpeed;
@@ -41,9 +42,15 @@ public class PlayerControl : MonoBehaviour {
     private Vector2 playerBottomLeft;
     private Vector2 playerBottomRight;
 
+    private Transform headCheck;
+
     private Transform headCheckLeft;
     private Transform headCheckRight;
+
     private Transform groundCheck;
+
+    private Transform groundCheckLeft;
+    private Transform groundCheckRight;
 
     private Transform sideCheckLeft;
     private Transform sideCheckRight;
@@ -68,13 +75,19 @@ public class PlayerControl : MonoBehaviour {
     private ParticleSystem groundParticleSystem;
     private ParticleSystem wallLeftParticleSystem;
     private ParticleSystem wallRightParticleSystem;
-    
+
 	// Use this for initialization
     void Awake()
     {
-        headCheckLeft = transform.FindChild("HeadCheckL");
-        headCheckRight = transform.FindChild("HeadCheckR");
+        headCheck = transform.FindChild("HeadCheck");
+
+        headCheckLeft = headCheck.FindChild("HeadCheckL");
+        headCheckRight = headCheck.FindChild("HeadCheckR");
+
         groundCheck = transform.FindChild("GroundCheck");
+
+        groundCheckLeft = groundCheck.FindChild("GroundCheckL");
+        groundCheckRight = groundCheck.FindChild("GroundCheckR");
 
         sideCheckLeft = transform.FindChild("SideCheckL");
         sideCheckRight = transform.FindChild("SideCheckR");
@@ -86,9 +99,9 @@ public class PlayerControl : MonoBehaviour {
 
         sprite = transform.FindChild("Sprite").gameObject;
 
-        if (groundCheck == null || headCheckLeft == null || headCheckRight == null || sprite == null)
+        if (groundCheck == null || headCheck == null || sideCheckLeft == null || sideCheckRight == null || sprite == null)
         {
-            UnityEngine.Debug.LogError("Can't find ground or either head check or sprite child!");
+            UnityEngine.Debug.LogError("Can't find ground or head or side checks or sprite child!");
             this.enabled = false;
         }
 
@@ -119,7 +132,7 @@ public class PlayerControl : MonoBehaviour {
 
         hit = Physics2D.Linecast(playerTopLeft, headCheckLeft.position, opponentLayerMask) || Physics2D.Linecast(playerTopRight, headCheckRight.position, opponentLayerMask);
 
-        grounded = Physics2D.Linecast(transform.position, groundCheck.position, (1 << LayerMask.NameToLayer("Ground"))) || Physics2D.Linecast(transform.position, groundCheck.position, (1 << LayerMask.NameToLayer("Wall")));
+        grounded = Physics2D.Linecast(playerBottomLeft, groundCheckLeft.position, (1 << LayerMask.NameToLayer("Ground"))) || Physics2D.Linecast(playerBottomRight, groundCheckRight.position, (1 << LayerMask.NameToLayer("Ground")));
 
         onLeftWall = Physics2D.Linecast(playerTopLeft, sideCheckTopLeft.position, (1 << LayerMask.NameToLayer("Wall"))) || Physics2D.Linecast(playerBottomLeft, sideCheckBottomLeft.position, (1 << LayerMask.NameToLayer("Wall")));
         onRightWall = Physics2D.Linecast(playerTopRight, sideCheckTopRight.position, (1 << LayerMask.NameToLayer("Wall"))) || Physics2D.Linecast(playerBottomRight, sideCheckBottomRight.position, (1 << LayerMask.NameToLayer("Wall")));
@@ -234,11 +247,13 @@ public class PlayerControl : MonoBehaviour {
         if (rigidbody2D.velocity.x > maxSpeed)
             rigidbody2D.velocity = new Vector2(Mathf.Sign(rigidbody2D.velocity.x) * maxSpeed, rigidbody2D.velocity.y);
     }
-
+    
     void jumpHandler()
     {
-        bool letGoOfJump = Input.GetButtonUp(jumpKey);
 
+
+        bool letGoOfJump = Input.GetButtonUp(jumpKey);
+            
         //if attached to a wall, start sliding them down
         if (onWall)
             rigidbody2D.AddForce(new Vector2(0, -wallFrictionForce));
@@ -280,8 +295,11 @@ public class PlayerControl : MonoBehaviour {
         {
             audio.PlayOneShot(jumpSound);
 
+            //nulify current force from gravity
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
+
             rigidbody2D.AddForce(new Vector2(0f, jumpForce));
+
             jump = false;
             inAir = true;
             hasJumped = true;
@@ -294,6 +312,7 @@ public class PlayerControl : MonoBehaviour {
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0f);
 
             rigidbody2D.AddForce(new Vector2(0f, jumpForce));
+
             doubleJump = false;
             hasDoubleJumped = true;
         }
@@ -321,7 +340,9 @@ public class PlayerControl : MonoBehaviour {
         Debug.DrawLine(sideCheckTopRight.position, sideCheckBottomRight.position, Color.blue);
         Debug.DrawLine(sideCheckBottomRight.position, playerBottomRight, Color.blue);
 
-        Debug.DrawLine(transform.position, groundCheck.position);
+        Debug.DrawLine(playerBottomLeft, groundCheckLeft.position, Color.yellow);
+        Debug.DrawLine(groundCheckLeft.position, groundCheckRight.position, Color.yellow);
+        Debug.DrawLine(groundCheckRight.position, playerBottomRight, Color.yellow);
     }
 
     public void respawn()

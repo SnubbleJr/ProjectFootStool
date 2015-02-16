@@ -16,10 +16,13 @@ public class ColorChanger : MonoBehaviour {
     }
 
 	// Update is called once per frame
-	void Update () 
+	void Update ()
     {
         if (go)
             renderer.material.color = Color.Lerp(renderer.material.color, changeColor, Time.deltaTime);
+
+        if ((renderer.material.color.r + color.r) < (1 - 0.06f))
+            go = false;
 	}
 
     public void startFade()
