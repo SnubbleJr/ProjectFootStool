@@ -12,6 +12,8 @@ public class PlayerFollower : MonoBehaviour {
     public float zoomSpeed;
     public float height;
 
+    public GameObject invertCylinder;
+
     private bool debug;
 
     private Transform overide;
@@ -24,11 +26,19 @@ public class PlayerFollower : MonoBehaviour {
 
     private Graphics g;
 
+    private GameObject invertCyl1, invertCyl2;
+    private bool spawnCly1 = true;
+
 	// Use this for initialization
 	void Awake () 
     {
         minRect = new Rect((1-min)/2, (1-min)/2, min, min);
         maxRect = new Rect((1-max)/2, (1-max)/2, max, max);
+
+        if (invertCylinder == null)
+        {
+            UnityEngine.Debug.LogError("No Invert Cylinder given!");
+        }
 	}
 	
 	// Update is called once per frame
@@ -81,6 +91,38 @@ public class PlayerFollower : MonoBehaviour {
         }
 	}
 
+    private void spawnInverter(Transform trans)
+    {
+        //spawn a invert cylinder, and destroy the old one if it exsists
+        if (invertCylinder)
+        {
+            //we use spawncly1 as a flag to flip between
+            if (spawnCly1)
+            {
+                if (invertCyl1)
+                {
+                    DestroyImmediate(invertCyl1);
+
+                    DestroyImmediate(invertCyl2);
+                }
+                invertCyl1 = Instantiate(invertCylinder, trans.position, Quaternion.identity) as GameObject;
+                spawnCly1 = false;
+            }
+            else
+            {
+                if (invertCyl2)
+                    DestroyImmediate(invertCyl2);
+
+                //find if cl12 esixsts, and push i back slightly so we don't overlap
+                if (invertCyl1)
+                    invertCyl1.transform.position = new Vector3(invertCyl1.transform.position.x, invertCyl1.transform.position.y, invertCyl1.transform.position.z + 1);
+
+                invertCyl2 = Instantiate(invertCylinder, trans.position, Quaternion.identity) as GameObject;
+                spawnCly1 = true;
+            }
+        }
+    }
+
     private void drawRect(Rect rect, Color color)
     {
         Debug.DrawLine(camera.ViewportToWorldPoint(new Vector3(rect.xMin, rect.yMin, 1)), camera.ViewportToWorldPoint(new Vector3(rect.xMax, rect.yMin, 1)), color);
@@ -98,6 +140,7 @@ public class PlayerFollower : MonoBehaviour {
     public void zoomInOnWinner(Transform winner)
     {
         overide = winner;
+        spawnInverter(winner);
     }
 
     public void resetZoom()

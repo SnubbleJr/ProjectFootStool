@@ -14,6 +14,7 @@ public class PlayerControl : MonoBehaviour {
 
     public AudioClip jumpSound;
     public AudioClip dJumpSound;
+    public AudioClip landingSound;
     public AudioClip deathSound;
 
     private int playerNo;
@@ -76,6 +77,8 @@ public class PlayerControl : MonoBehaviour {
     private ParticleSystem wallLeftParticleSystem;
     private ParticleSystem wallRightParticleSystem;
 
+    private GameObject viewingCamera;
+
 	// Use this for initialization
     void Awake()
     {
@@ -99,6 +102,8 @@ public class PlayerControl : MonoBehaviour {
 
         sprite = transform.FindChild("Sprite").gameObject;
 
+        viewingCamera = GameObject.Find("Viewing Camera");
+
         if (groundCheck == null || headCheck == null || sideCheckLeft == null || sideCheckRight == null || sprite == null)
         {
             UnityEngine.Debug.LogError("Can't find ground or head or side checks or sprite child!");
@@ -108,6 +113,12 @@ public class PlayerControl : MonoBehaviour {
         if (jumpSound == null || dJumpSound == null || deathSound == null)
         {
             UnityEngine.Debug.LogError("Sounds have not been given!");
+            this.enabled = false;
+        }
+
+        if (viewingCamera == null)
+        {
+            UnityEngine.Debug.LogError("No viewing camera found!");
             this.enabled = false;
         }
 
@@ -134,8 +145,8 @@ public class PlayerControl : MonoBehaviour {
 
         grounded = Physics2D.Linecast(playerBottomLeft, groundCheckLeft.position, (1 << LayerMask.NameToLayer("Ground"))) || Physics2D.Linecast(playerBottomRight, groundCheckRight.position, (1 << LayerMask.NameToLayer("Ground")));
 
-        onLeftWall = Physics2D.Linecast(playerTopLeft, sideCheckTopLeft.position, (1 << LayerMask.NameToLayer("Wall"))) || Physics2D.Linecast(playerBottomLeft, sideCheckBottomLeft.position, (1 << LayerMask.NameToLayer("Wall")));
-        onRightWall = Physics2D.Linecast(playerTopRight, sideCheckTopRight.position, (1 << LayerMask.NameToLayer("Wall"))) || Physics2D.Linecast(playerBottomRight, sideCheckBottomRight.position, (1 << LayerMask.NameToLayer("Wall")));
+        onLeftWall = Physics2D.Linecast(playerTopLeft, sideCheckTopLeft.position, (1 << LayerMask.NameToLayer("Ground"))) || Physics2D.Linecast(playerBottomLeft, sideCheckBottomLeft.position, (1 << LayerMask.NameToLayer("Ground")));
+        onRightWall = Physics2D.Linecast(playerTopRight, sideCheckTopRight.position, (1 << LayerMask.NameToLayer("Ground"))) || Physics2D.Linecast(playerBottomRight, sideCheckBottomRight.position, (1 << LayerMask.NameToLayer("Ground")));
 
         onWall = onLeftWall || onRightWall;
 
@@ -208,6 +219,10 @@ public class PlayerControl : MonoBehaviour {
 
         GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>().playerLost(playerNo);
         this.enabled = false;
+
+        //screen ripple
+        Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
+        viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
     }
 
     void inputHandler()
@@ -269,9 +284,19 @@ public class PlayerControl : MonoBehaviour {
 
             //screen shake
             if (onRightWall)
+            {
                 wallRightParticleSystem.Play();
+                //screen ripple
+                Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
+                viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
+            }
             if (onLeftWall)
+            {
                 wallLeftParticleSystem.Play();
+                //screen ripple
+                Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
+                viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
+            }
         }
 
         //if hit ground with force, play sound and particles, and screen shake
@@ -279,8 +304,14 @@ public class PlayerControl : MonoBehaviour {
         {
             landed = false;
             //landing sound
+            audio.PlayOneShot(landingSound);
+
             groundParticleSystem.Play();
             //screen shake
+
+            //screen ripple
+            Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
+            viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
         }
         
         //if jump is let go and we are jumping up, then stop veritcal movement

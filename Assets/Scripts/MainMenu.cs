@@ -7,6 +7,7 @@ public class MainMenu : MonoBehaviour {
 
     private PlayerManagerBehaviour playerManager;
     private PlayerFollower playerFollower;
+    private PauseMenuScript pauseMenue;
 
     private float cameraSize;
     private Vector3 cameraPos;
@@ -19,6 +20,7 @@ public class MainMenu : MonoBehaviour {
         cameraPos = Camera.main.transform.position;
         playerManager = GetComponent<PlayerManagerBehaviour>();
         playerFollower = Camera.main.GetComponent<PlayerFollower>();
+        pauseMenue = GetComponent<PauseMenuScript>();
 	}
 
     void OnGUI()
@@ -54,6 +56,7 @@ public class MainMenu : MonoBehaviour {
         playerFollower.enabled = true;
         playerManager.startGame();
         Camera.main.transform.rotation = Quaternion.identity;
+        pauseMenue.enabled = true;
     }
 
     public void resetGame()
@@ -61,5 +64,6 @@ public class MainMenu : MonoBehaviour {
         inGame = false;
         playerManager.enabled = false;
         playerFollower.enabled = false;
+        pauseMenue.enabled = false;
     }
 }

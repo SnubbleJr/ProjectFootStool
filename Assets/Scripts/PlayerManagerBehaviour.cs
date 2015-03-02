@@ -221,5 +221,12 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         Destroy(p2);
         winner = 0;
         GetComponent<MainMenu>().resetGame();
+
+        Camera.main.gameObject.SendMessage("setFade", false);
+
+        foreach (GameObject obj in fadingColorObjects)
+        {
+            obj.SendMessage("setFade", false);
+        }
     }
 }
