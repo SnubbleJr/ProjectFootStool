@@ -16,7 +16,7 @@ public class InvertCylinderBehaviour : MonoBehaviour {
 	
     void Update()
     {
-        if (transform.localScale.x > 60)
+        if (transform.localScale.x > 80)
             this.enabled = false;
 
         newTrans.x += 1.5f;

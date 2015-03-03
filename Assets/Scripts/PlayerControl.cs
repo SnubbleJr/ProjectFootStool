@@ -33,6 +33,8 @@ public class PlayerControl : MonoBehaviour {
     private bool hasDoubleJumped = true;   //a state for if we have already double jumped still needs to be held.
     private bool inAir = true;
     private bool landed = false;
+    private bool firstTimeOnWall = false;
+    private bool hasBeenOnWall = false;
 
     private bool down = false;              //similar to jump - we can't really get key downs in fixed update
 
@@ -150,31 +152,14 @@ public class PlayerControl : MonoBehaviour {
 
         onWall = onLeftWall || onRightWall;
 
-        //if on wall, set gorunded, so we can jump again
-        if (onWall)
-        {
-            //if we're on the ground, then don't set landed
-            if (!grounded)
-                landed = true;
-
-            grounded = true;
-            inAir = false;
-        }
-
+        //if not holding into the wall, then disable being on the wall
+        //else, they get penalised for just being next to the wall
         if (grounded)
-        {
-            if (inAir)
-                landed = true;
+            onWall = false;
 
-            inAir = false;
-            hasJumped = false;
-            hasDoubleJumped = false;
-        }
-        else
-        {
-            inAir = true;
-            landed = false;
-        }
+        groundChecker();
+
+        wallChecker();
 
         //direction input fixing
         if (Input.GetButtonDown(leftKey))
@@ -196,6 +181,46 @@ public class PlayerControl : MonoBehaviour {
                 doubleJump = true;
         }
 	}
+
+    void groundChecker()
+    {
+        //here we check if wer'e on ground to reset jumps
+        if (grounded)
+        {
+            if (inAir)
+                landed = true;
+
+            inAir = false;
+            hasJumped = false;
+            hasDoubleJumped = false;
+        }
+        else
+        {
+            inAir = true;
+            landed = false;
+        }
+    }
+
+    void wallChecker()
+    {
+        //if on wall, set gorunded, so we can jump again
+        if (onWall)
+        {
+            //reset jumps
+            hasJumped = false;
+            hasDoubleJumped = false;
+
+            //if we've hit the wall for the first time, set first time to true
+            if (!hasBeenOnWall)
+                firstTimeOnWall = true;
+
+            hasBeenOnWall = true;
+        }
+        else
+        {
+            hasBeenOnWall = false;
+        }
+    }
 
     void FixedUpdate()
     {
@@ -245,18 +270,26 @@ public class PlayerControl : MonoBehaviour {
             rigidbody2D.AddForce(Vector2.up *-1 * fastFallForce);
 
         // If the player is changing direction or letting go of controls, stop all horizontal movement, but only on ground
-        if (h != Mathf.Sign(rigidbody2D.velocity.x) & !inAir)
+        if (h != Mathf.Sign(rigidbody2D.velocity.x) && !inAir)
             rigidbody2D.velocity = new Vector2(0f, rigidbody2D.velocity.y);
 
         // If the player is changing direction or hasn't reached maxSpeed yet, add a force
         if (h * rigidbody2D.velocity.x < maxSpeed)
         {
-            rigidbody2D.AddForce(Vector2.right * h * moveForce);
+            float magnitude = 1f;
+
+            //apply nerfed horizontal force if it's not into the wall, to give a cling
+            if ((onLeftWall && h < 0) || (onRightWall && h > 0))
+                magnitude = 0.3f;
+
+            rigidbody2D.AddForce(Vector2.right * h * moveForce * magnitude);
+                
             //flip sprite
             //Vector3 scale = transform.localScale;
             //scale.x *= h;
             //transform.localScale = scale;
         }
+        
 
         // If the player's horizontal velocity is greater than the maxSpeed, set it to max speed
         if (rigidbody2D.velocity.x > maxSpeed)
@@ -265,18 +298,14 @@ public class PlayerControl : MonoBehaviour {
     
     void jumpHandler()
     {
-
-
         bool letGoOfJump = Input.GetButtonUp(jumpKey);
-            
-        //if attached to a wall, start sliding them down
-        if (onWall)
-            rigidbody2D.AddForce(new Vector2(0, -wallFrictionForce));
+        float h = Input.GetAxisRaw(horizontalAxis);
         
         //if hit wall with force, play sound and particles, and screen shake
-        if (landed && onWall)
+        //only do this if we've hit thge wall for the first time
+        if (firstTimeOnWall)
         {
-            landed = false;
+            firstTimeOnWall = false;
 
             //fix wall jumping not reseting double jumps
             //hasDoubleJumped = false;
@@ -322,6 +351,13 @@ public class PlayerControl : MonoBehaviour {
         if (inAir)
             rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x), 0));
 
+        //do not allow jump if it is into a wall (unless grounded)
+        if (((onLeftWall && h < 0) || (onRightWall && h > 0)) && !grounded)
+        {
+            jump = false;
+            doubleJump = false;
+        }
+
         if (jump)
         {
             audio.PlayOneShot(jumpSound);
@@ -345,6 +381,7 @@ public class PlayerControl : MonoBehaviour {
             rigidbody2D.AddForce(new Vector2(0f, jumpForce));
 
             doubleJump = false;
+            inAir = true;
             hasDoubleJumped = true;
         }
     }
