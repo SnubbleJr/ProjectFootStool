@@ -6,11 +6,9 @@ public class PlayerControl : MonoBehaviour {
     private bool debug;
 
     public float jumpForce;
-    public float jumpHeight = 1.5f;
     public float fastFallForce;
     public float moveForce;
     public float maxSpeed;
-    public float wallFrictionForce;
 
     public AudioClip jumpSound;
     public AudioClip dJumpSound;
@@ -265,8 +263,8 @@ public class PlayerControl : MonoBehaviour {
         if (h == 0)
             h = lastPressed;
         
-        // If the player is holding down, apply fall force
-        if (down)
+        // If the player is holding down, apply fall force, unless they're on the floor
+        if (down && !grounded)
             rigidbody2D.AddForce(Vector2.up *-1 * fastFallForce);
 
         // If the player is changing direction or letting go of controls, stop all horizontal movement, but only on ground
@@ -276,13 +274,9 @@ public class PlayerControl : MonoBehaviour {
         // If the player is changing direction or hasn't reached maxSpeed yet, add a force
         if (h * rigidbody2D.velocity.x < maxSpeed)
         {
-            float magnitude = 1f;
+            //cling if moved into wall
 
-            //apply nerfed horizontal force if it's not into the wall, to give a cling
-            if ((onLeftWall && h < 0) || (onRightWall && h > 0))
-                magnitude = 0.3f;
-
-            rigidbody2D.AddForce(Vector2.right * h * moveForce * magnitude);
+            rigidbody2D.AddForce(Vector2.right * h * moveForce);
                 
             //flip sprite
             //Vector3 scale = transform.localScale;
@@ -351,13 +345,6 @@ public class PlayerControl : MonoBehaviour {
         if (inAir)
             rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x), 0));
 
-        //do not allow jump if it is into a wall (unless grounded)
-        if (((onLeftWall && h < 0) || (onRightWall && h > 0)) && !grounded)
-        {
-            jump = false;
-            doubleJump = false;
-        }
-
         if (jump)
         {
             audio.PlayOneShot(jumpSound);
@@ -365,7 +352,22 @@ public class PlayerControl : MonoBehaviour {
             //nulify current force from gravity
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
 
-            rigidbody2D.AddForce(new Vector2(0f, jumpForce));
+            //if we are on a wall then jump off it
+            if (onWall && !grounded)
+            {
+                int direction = 1;
+
+                if (onLeftWall)
+                    direction = 1;
+
+                if (onRightWall)
+                    direction = -1;
+                
+                rigidbody2D.AddForce(Vector2.right * direction * moveForce * 5);
+                print(Vector2.right * direction * moveForce * 5);
+            }
+
+            rigidbody2D.AddForce(Vector2.up * jumpForce);
 
             jump = false;
             inAir = true;

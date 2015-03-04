@@ -14,7 +14,8 @@ Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.1\P
 Loading C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.1\PCx86\ProjectFootStool_x86_Data\Managed\Assembly-UnityScript-firstpass.dll into Unity Child Domain
 Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.1\PCx86\ProjectFootStool_x86_Data\Managed\UnityEngine.UI.dll (this message is harmless)
 Loading C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.1\PCx86\ProjectFootStool_x86_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
-- Completed reload, in  0.069 seconds
+- Completed reload, in  0.081 seconds
 desktop: 1366x768 60Hz; virtual: 1366x768 at 0,0
 <RI> Initializing input.
 <RI> Input initialized.
+Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.1\PCx86\ProjectFootStool_x86_Data\Managed\System.Core.dll (this message is harmless)

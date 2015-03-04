@@ -170,7 +170,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         if (winner != 0)
             endOfGame();
         else
-            Invoke("respawn", 0.8f);
+            Invoke("respawn", 0.5f);
     }
 
     private void respawn()

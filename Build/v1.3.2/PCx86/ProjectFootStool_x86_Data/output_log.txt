@@ -1,0 +1,100 @@
+Initialize engine version: 4.6.3f1 (4753d8b6ef2b)
+GfxDevice: creating device client; threaded=1
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.0]
+    Renderer: NVIDIA GeForce GT 745M   (ID=0xfe3)
+    Vendor:   NVIDIA
+    VRAM:     1988 MB
+Begin MonoManager ReloadAssembly
+Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\UnityEngine.dll (this message is harmless)
+Loading C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\UnityEngine.dll into Unity Child Domain
+Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\Assembly-CSharp.dll (this message is harmless)
+Loading C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\Assembly-CSharp.dll into Unity Child Domain
+Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\Assembly-UnityScript-firstpass.dll (this message is harmless)
+Loading C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\Assembly-UnityScript-firstpass.dll into Unity Child Domain
+Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\UnityEngine.UI.dll (this message is harmless)
+Loading C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
+- Completed reload, in  0.059 seconds
+desktop: 1366x768 60Hz; virtual: 1366x768 at 0,0
+<RI> Initializing input.
+<RI> Input initialized.
+Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.3.2\PCx86\ProjectFootStool_x86_Data\Managed\System.Core.dll (this message is harmless)
+Player 2 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 1 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 2 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 2 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 1 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 1 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 1 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 2 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 1 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+IndexOutOfRangeException: Array index is out of range.
+  at rippleSharp.splashAtPoint (Int32 x, Int32 y) [0x00000] in <filename unknown>:0 
+  at rippleSharp.screenSplash (Vector2 coOrds) [0x00000] in <filename unknown>:0 
+  at CameraToPlane.splashAtPoint (Vector2 coOrds) [0x00000] in <filename unknown>:0 
+UnityEngine.GameObject:SendMessage(String, Object, SendMessageOptions)
+UnityEngine.GameObject:SendMessage(String, Object)
+PlayerControl:jumpHandler()
+PlayerControl:FixedUpdate()
+ 
+(Filename:  Line: -1)
+
+Player 1 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+Player 1 was hit!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 56)
+
+<RI.Hid> Failed to get preparsed data.
+ 
+(Filename:  Line: 73)
+
+<RI.Hid> Failed to get preparsed data.
+ 
+(Filename:  Line: 73)
+
+<RI.Hid> Failed to get preparsed data.
+ 
+(Filename:  Line: 73)
+
+<RI.Hid> Failed to get preparsed data.
+ 
+(Filename:  Line: 73)
+
+<RI.Hid> Failed to get preparsed data.
+ 
+(Filename:  Line: 73)
+
+<RI.Hid> Failed to get preparsed data.
+ 
+(Filename:  Line: 73)
+
