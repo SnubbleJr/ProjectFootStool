@@ -25,6 +25,9 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     private int countDownStart = 5;
     private int countDown;
 
+    private Color p1Color = Color.red;
+    private Color p2Color = Color.green;
+
 	// Use this for initialization
     void Awake()
     {
@@ -68,8 +71,8 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         Color cameaBG = Camera.main.backgroundColor;
         Color inverseCameraBg = new Color(1.0f-cameaBG.r, 1.0f-cameaBG.g, 1.0f-cameaBG.b);
 
-        p1Control.setPlayer(1, 2, inverseCameraBg);
-        p2Control.setPlayer(2, 1, inverseCameraBg);
+        p1Control.setPlayer(1, 2, p1Color);
+        p2Control.setPlayer(2, 1, p2Color);
         
         p1Control.enabled = false;
         p2Control.enabled = false;
@@ -126,11 +129,11 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         if (p1Control && p2Control)
         {
-            GUI.Label(new Rect(Screen.width - 58, 52 / 10, 50, 30), "<color=black>" + p2Control.getScore().ToString() + "</color>");
-            GUI.Label(new Rect(Screen.width - 60, 50 / 10, 50, 30), "<color=white>" + p2Control.getScore().ToString() + "</color>");
-
             GUI.Label(new Rect(8, 52 / 10, 50, 30), "<color=black>" + p1Control.getScore().ToString() + "</color>");
-            GUI.Label(new Rect(10, 50 / 10, 50, 30), "<color=white>" + p1Control.getScore().ToString() + "</color>");
+            GUI.Label(new Rect(10, 50 / 10, 50, 30), "<color=red>" + p1Control.getScore().ToString() + "</color>");
+
+            GUI.Label(new Rect(Screen.width - 58, 52 / 10, 50, 30), "<color=black>" + p2Control.getScore().ToString() + "</color>");
+            GUI.Label(new Rect(Screen.width - 60, 50 / 10, 50, 30), "<color=green>" + p2Control.getScore().ToString() + "</color>");
         }
 
         if (winner != 0)
@@ -219,6 +222,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     {
         Destroy(p1);
         Destroy(p2);
+
         winner = 0;
         GetComponent<MainMenu>().resetGame();
 

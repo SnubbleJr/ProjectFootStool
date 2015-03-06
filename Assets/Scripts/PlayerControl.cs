@@ -33,6 +33,9 @@ public class PlayerControl : MonoBehaviour {
     private bool landed = false;
     private bool firstTimeOnWall = false;
     private bool hasBeenOnWall = false;
+    
+    private bool letGoOfJump;
+    private float h;
 
     private bool down = false;              //similar to jump - we can't really get key downs in fixed update
 
@@ -149,6 +152,9 @@ public class PlayerControl : MonoBehaviour {
         onRightWall = Physics2D.Linecast(playerTopRight, sideCheckTopRight.position, (1 << LayerMask.NameToLayer("Ground"))) || Physics2D.Linecast(playerBottomRight, sideCheckBottomRight.position, (1 << LayerMask.NameToLayer("Ground")));
 
         onWall = onLeftWall || onRightWall;
+        
+        letGoOfJump = Input.GetButtonUp(jumpKey);
+        h = Input.GetAxisRaw(horizontalAxis);
 
         //if not holding into the wall, then disable being on the wall
         //else, they get penalised for just being next to the wall
@@ -236,7 +242,7 @@ public class PlayerControl : MonoBehaviour {
         audio.PlayOneShot(deathSound);
         
         dead = true;
-        sprite.renderer.material.color = Color.black;
+        sprite.renderer.material.color = Color.grey;
         GetComponent<BoxCollider2D>().enabled = false;
         anim.SetTrigger("Dead");
 
@@ -250,9 +256,6 @@ public class PlayerControl : MonoBehaviour {
 
     void inputHandler()
     {
-        // Cache the input.
-        float h = Input.GetAxisRaw(horizontalAxis);
-
         // Snapping for analogsticks
         if (h > 0)
             h = 1;
@@ -291,10 +294,7 @@ public class PlayerControl : MonoBehaviour {
     }
     
     void jumpHandler()
-    {
-        bool letGoOfJump = Input.GetButtonUp(jumpKey);
-        float h = Input.GetAxisRaw(horizontalAxis);
-        
+    {        
         //if hit wall with force, play sound and particles, and screen shake
         //only do this if we've hit thge wall for the first time
         if (firstTimeOnWall)
@@ -338,12 +338,15 @@ public class PlayerControl : MonoBehaviour {
         }
         
         //if jump is let go and we are jumping up, then stop veritcal movement
-        if (rigidbody2D.velocity.y > 0 && letGoOfJump)
+        if (rigidbody2D.velocity.y > 0.2f && letGoOfJump)
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0f);
 
-        //air friction
-        if (inAir)
-            rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x), 0));
+        //normal air friciton
+        rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x), 0));
+
+        //air friction if h let go
+        if (inAir && h == 0)
+            rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x * 4), 0));
 
         if (jump)
         {
@@ -364,7 +367,6 @@ public class PlayerControl : MonoBehaviour {
                     direction = -1;
                 
                 rigidbody2D.AddForce(Vector2.right * direction * moveForce * 5);
-                print(Vector2.right * direction * moveForce * 5);
             }
 
             rigidbody2D.AddForce(Vector2.up * jumpForce);
@@ -378,9 +380,9 @@ public class PlayerControl : MonoBehaviour {
             audio.PlayOneShot(dJumpSound);
 
             //nulify current force from gravity
-            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0f);
+            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
 
-            rigidbody2D.AddForce(new Vector2(0f, jumpForce));
+            rigidbody2D.AddForce(Vector2.up * jumpForce);
 
             doubleJump = false;
             inAir = true;
@@ -418,7 +420,14 @@ public class PlayerControl : MonoBehaviour {
     public void respawn()
     {
         dead = false;
+        //invert color
+        color = (new Color(1 - color.r, 1 - color.g, 1 - color.b, 1));
+
         sprite.renderer.material.color = color;
+        groundParticleSystem.startColor = color;
+        wallLeftParticleSystem.startColor = color;
+        wallRightParticleSystem.startColor = color;
+
         GetComponent<BoxCollider2D>().enabled = true;
         lastPressed = 0;
         anim.SetTrigger("Reset");
