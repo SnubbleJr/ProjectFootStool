@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PlayerControl : MonoBehaviour {
     
@@ -16,8 +17,8 @@ public class PlayerControl : MonoBehaviour {
     public AudioClip deathSound;
 
     private int playerNo;
-    private int score;
-    private int opponentLayerMask;
+    private int score;      //can be lives as well as time on hill
+    private List<int> opponentLayerMasks;
 
     private bool hit = false;
     private bool dead = false;
@@ -73,6 +74,7 @@ public class PlayerControl : MonoBehaviour {
     private Color color;
 
     private GameObject sprite;
+    private SpriteRenderer spriteRenderer;
 
     private Animator anim;
 
@@ -125,6 +127,7 @@ public class PlayerControl : MonoBehaviour {
             this.enabled = false;
         }
 
+        spriteRenderer = sprite.GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
         groundParticleSystem = groundCheck.GetComponentInChildren<ParticleSystem>();
         wallLeftParticleSystem = sideCheckLeft.GetComponentInChildren<ParticleSystem>();
@@ -144,7 +147,12 @@ public class PlayerControl : MonoBehaviour {
             debugDrawHitBoxes();
         }
 
-        hit = Physics2D.Linecast(playerTopLeft, headCheckLeft.position, opponentLayerMask) || Physics2D.Linecast(playerTopRight, headCheckRight.position, opponentLayerMask);
+        hit = false;
+
+        foreach(int opponentLayerMask in opponentLayerMasks)
+        {
+            hit = Physics2D.Linecast(playerTopLeft, headCheckLeft.position, opponentLayerMask) || Physics2D.Linecast(playerTopRight, headCheckRight.position, opponentLayerMask) || hit;
+        }
 
         grounded = Physics2D.Linecast(playerBottomLeft, groundCheckLeft.position, (1 << LayerMask.NameToLayer("Ground"))) || Physics2D.Linecast(playerBottomRight, groundCheckRight.position, (1 << LayerMask.NameToLayer("Ground")));
 
@@ -153,7 +161,7 @@ public class PlayerControl : MonoBehaviour {
 
         onWall = onLeftWall || onRightWall;
         
-        letGoOfJump = Input.GetButtonUp(jumpKey);
+        letGoOfJump = !Input.GetButton(jumpKey);
         h = Input.GetAxisRaw(horizontalAxis);
 
         //if not holding into the wall, then disable being on the wall
@@ -242,13 +250,12 @@ public class PlayerControl : MonoBehaviour {
         audio.PlayOneShot(deathSound);
         
         dead = true;
-        sprite.renderer.material.color = Color.grey;
+        spriteRenderer.color = Color.grey;
         GetComponent<BoxCollider2D>().enabled = false;
         anim.SetTrigger("Dead");
 
-        GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>().playerLost(playerNo);
-        this.enabled = false;
-
+        GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>().playerHit(this);
+        
         //screen ripple
         Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
         viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
@@ -342,11 +349,11 @@ public class PlayerControl : MonoBehaviour {
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0f);
 
         //normal air friciton
-        rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x), 0));
+        rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x * 4), 0));
 
         //air friction if h let go
         if (inAir && h == 0)
-            rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x * 4), 0));
+            rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x * 6), 0));
 
         if (jump)
         {
@@ -419,18 +426,25 @@ public class PlayerControl : MonoBehaviour {
 
     public void respawn()
     {
+        hit = false;
         dead = false;
-        //invert color
-        color = (new Color(1 - color.r, 1 - color.g, 1 - color.b, 1));
 
-        sprite.renderer.material.color = color;
-        groundParticleSystem.startColor = color;
-        wallLeftParticleSystem.startColor = color;
-        wallRightParticleSystem.startColor = color;
+        invertColors();
 
         GetComponent<BoxCollider2D>().enabled = true;
         lastPressed = 0;
         anim.SetTrigger("Reset");
+    }
+
+    public void invertColors()
+    {
+        //invert color
+        color = (new Color(1 - color.r, 1 - color.g, 1 - color.b, 1));
+
+        spriteRenderer.color = color;
+        groundParticleSystem.startColor = color;
+        wallLeftParticleSystem.startColor = color;
+        wallRightParticleSystem.startColor = color;
     }
 
     public int getPlayerNo()
@@ -438,17 +452,28 @@ public class PlayerControl : MonoBehaviour {
         return playerNo;
     }
 
-    public void setPlayer(int playerNumber, int opponentNumber, Color pColor)
+    public void setPlayer(int playerNumber, List<int> opponentNumbers, Color pColor, Sprite tsprite)
     {
         color = pColor;
-        sprite.renderer.material.color = color;
+        color.a = 1;
+        spriteRenderer.color = color;
+        spriteRenderer.sprite = tsprite;
         groundParticleSystem.startColor = color;
         wallLeftParticleSystem.startColor = color;
         wallRightParticleSystem.startColor = color;
 
         playerNo = playerNumber;
 
-        setLayerMask("Player " + playerNo, "Player " + opponentNumber);
+        //set our layermask
+        this.gameObject.layer = LayerMask.NameToLayer("Player " + playerNo);
+
+        opponentLayerMasks = new List<int>();
+
+        //set opponentNumbers
+        foreach (int opponentNumber in opponentNumbers)
+        {
+            setLayerMask("Player " + opponentNumber.ToString());
+        }
 
         //set up the inputs for this player
         horizontalAxis = "P" + playerNumber + horizontalAxis;
@@ -458,10 +483,9 @@ public class PlayerControl : MonoBehaviour {
         downKey = "P" + playerNumber + downKey;
     }
 
-    private void setLayerMask(string mask, string opMask)
+    private void setLayerMask(string opMask)
     {
-        this.gameObject.layer = LayerMask.NameToLayer(mask);
-        opponentLayerMask = (1 << LayerMask.NameToLayer(opMask));
+        opponentLayerMasks.Add(1 << LayerMask.NameToLayer(opMask));
         //Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer(mask), LayerMask.NameToLayer(opMask), true);
     }
 
@@ -470,9 +494,29 @@ public class PlayerControl : MonoBehaviour {
         return score;
     }
 
+    public void setScore(int l)
+    {
+        score = l;
+    }
+
     public void increaseScore()
     {
-        score++;
+        score--;
+    }
+
+    public void decreaseScore()
+    {
+        score--;
+    }
+
+    public void increaseScore(int value)
+    {
+        score += value;
+    }
+
+    public void decreaseScore(int value)
+    {
+        score -= value;
     }
 
     public void setDebug(bool value)
