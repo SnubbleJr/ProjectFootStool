@@ -137,7 +137,7 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
         {
             if (playerControls[i].getScore() >= timeToWin)
             {
-                return (i + 1);
+                return playerControls[i].getPlayerNo();
             }
         }
 

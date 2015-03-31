@@ -1,22 +1,24 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+//activated player selection script amanger
+//also worries about the current game mode
+//talks to main menu
+
 public class PlayerSelectionMenuScript : MonoBehaviour {
 
     public GameObject playerSelectionManager;
 
     private PlayerManagerBehaviour playerManager;
     private PlayerSelectionScriptManager playerSelecterManager;
-    private int stockCount;
-    private string stockString = "4";
-
-    private int playerCount;
-    private string playerString = "4";
+    private GameModeSelectionScriptManager gameModeSelecterManager;
+    private MainMenu mainMenu;
 
 	// Use this for initialization
 	void Awake ()
     {
         playerManager = GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>();
+        mainMenu = GetComponent<MainMenu>();
 
         if (playerManager == null)
         {
@@ -25,52 +27,41 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         }
 	}
 	
-    void OnGUI()
-    {
-        GUI.skin = playerManager.skin;
-
-        GUI.Label(new Rect(2, 2, 150, 70), "<size=30><color=black>Players: </color></size>");
-        GUI.Label(new Rect(0, 0, 150, 70), "<size=30><color=yellow>Players: </color></size>");
-
-        playerString = GUI.TextField(new Rect(175, 30, 30, 30), playerString);
-        int.TryParse(playerString, out playerCount);
-
-        GUI.Label(new Rect(152, 2, 400, 70), "<size=30><color=black>Stocks: </color></size>");
-        GUI.Label(new Rect(150, 0, 400, 70), "<size=30><color=yellow>Stocks: </color></size>");
-
-        stockString = GUI.TextField(new Rect(450, 30, 30, 30), stockString);
-        int.TryParse(stockString, out stockCount);
-    }
-
 	// Update is called once per frame
-	void Update () {
-	
+	void Update () 
+    {
+        if (Input.GetButtonDown("Submit"))
+        {
+            if (checkReady())
+                mainMenu.startGame();
+        }
 	}
-    
-    public PlayerSprite[] getSprites()
+
+    private bool checkReady()
     {
-        return playerSelecterManager.getSprites();
+        //check to see if everyone is ready
+        return playerSelecterManager.checkReady();
     }
 
-    public PlayerColor[] getColors()
+    public Player[] getPlayers()
     {
-        return playerSelecterManager.getColors();
+        return playerSelecterManager.getPlayers();
     }
 
-    public int getStockAmount()
+    public GameMode GetGameMode()
     {
-        return stockCount;
+        if (gameModeSelecterManager == null)
+            gameModeSelecterManager = playerSelectionManager.GetComponent<GameModeSelectionScriptManager>();
+
+        return gameModeSelecterManager.GetGameMode();
     }
 
-    public int getPlayerCount()
+    public int getStockCount()
     {
-        if (playerCount < 2)
-            playerCount = 2;
-
-        if (playerCount > 4)
-            playerCount = 4;
-
-        return playerCount;
+        if (gameModeSelecterManager == null)
+            gameModeSelecterManager = playerSelectionManager.GetComponent<GameModeSelectionScriptManager>();
+        
+        return gameModeSelecterManager.getStockCount();
     }
 
     public void setScript(bool value)
@@ -80,5 +71,9 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         if (playerSelecterManager == null)
             playerSelecterManager = playerSelectionManager.GetComponent<PlayerSelectionScriptManager>();
         playerSelecterManager.setScript(value);
+
+        if (gameModeSelecterManager == null)
+            gameModeSelecterManager = playerSelectionManager.GetComponent<GameModeSelectionScriptManager>();
+        gameModeSelecterManager.setScript(value);
     }
 }

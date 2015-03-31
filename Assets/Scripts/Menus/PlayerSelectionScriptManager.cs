@@ -2,6 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 
+//makes player selection objects and gets each one's spreite and color
+//passes it up to player selection menu
+
 [System.Serializable]
 public class PlayerSprite
 {
@@ -38,6 +41,13 @@ public class PlayerColor
     {
         return available;
     }
+}
+
+public class Player
+{
+    public int playerNo;
+    public PlayerSprite sprite;
+    public PlayerColor color;
 }
 
 public class PlayerSelectionScriptManager : MonoBehaviour 
@@ -78,7 +88,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
 
         //if odd, then spawn of the right side of the screen
         if (playerNo % 2 == 1)
-            x = 1.4f;
+            x = 1.2f;
         //else will be on the left
 
         //if above 2, then spawn below
@@ -100,33 +110,68 @@ public class PlayerSelectionScriptManager : MonoBehaviour
 	void Update () {
 	
 	}
-
-    public PlayerSprite[] getSprites()
+    
+    public Player[] getPlayers()
     {
-        List<PlayerSprite> sprites = new List<PlayerSprite>();
+        //returns an array of all the players active for a game
 
-        foreach (PlayerSelectionScript playerSelecter in playerSelecters)
-            sprites.Add(playerSelecter.getSprite());
-        
-        return sprites.ToArray();
-    }
+        //returns an array of all the players for a round
+        List<Player> players = new List<Player>();
 
-    public PlayerColor[] getColors()
-    {
-        List<PlayerColor> colors = new List<PlayerColor>();
+        foreach (PlayerSelectionScript playerSelectionScript in playerSelecters)
+        {
+            if (playerSelectionScript.getActive() && playerSelectionScript.getReady())
+            {
+                Player player = new Player();
 
-        foreach (PlayerSelectionScript playerSelecter in playerSelecters)
-        colors.Add(playerSelecter.getColor());
+                player.sprite = playerSelectionScript.getSprite();
+                player.color = playerSelectionScript.getColor();
+                player.playerNo = playerSelectionScript.getPlayer();
 
-        return colors.ToArray();
+                players.Add(player);
+            }
+        }
+
+        return players.ToArray();
     }
 
     public void setScript(bool value)
     {
-        //setSctive to every selecter under it, as we can't disable this game object
+        //setActive to every selecter under it, as we can't disable this game object
         foreach (PlayerSelectionScript selecter in playerSelecters)
         {
             selecter.gameObject.SetActive(value);
         }
+    }
+
+    public bool checkReady()
+    {
+        //returns true only if all active players are ready, and more than 2 players are ready
+        bool ready = true;
+
+        foreach (PlayerSelectionScript playerSelectionScript in playerSelecters)
+        {
+            if (playerSelectionScript.getActive() && !playerSelectionScript.getReady())
+                ready = false;
+        }
+
+        Player[] readyPlayers = getPlayers();
+
+        if (readyPlayers.Length < 2)
+            ready = false;
+
+        return ready;
+    }
+
+    public void setSelectorToGrey(int id, bool status)
+    {
+        //set a selector to be greyed out and inactive or go back to normal
+        playerSelecters[id - 1].setGrey(status);
+    }
+
+    public bool getSelectorActive(int id)
+    {
+        //returns weither or not the selector is active
+        return playerSelecters[id - 1].getActive();
     }
 }

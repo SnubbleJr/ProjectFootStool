@@ -31,8 +31,8 @@ public class MainMenu : MonoBehaviour {
         {
             GUI.skin = playerManager.skin;
 
-            GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50), "<size=30><color=black>PROJECTFOOTSTOOL</color></size><size=15><color=black> v " + versionNumber + "</color></size>");
-            GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50), "<size=30>PROJECT<color=yellow>FOOT</color>STOOL</size><size=15><color=yellow> v " + versionNumber + "</color></size>");
+            GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 30), "<size=30><color=black>PROJECTFOOTSTOOL</color></size><size=15><color=black> v " + versionNumber + "</color></size>");
+            GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 30), "<size=30>PROJECT<color=yellow>FOOT</color>STOOL</size><size=15><color=yellow> v " + versionNumber + "</color></size>");
         }
     }
 
@@ -45,8 +45,6 @@ public class MainMenu : MonoBehaviour {
             {
                 if (!playerSelectionMenu.enabled)
                     displayPlayerMenu();
-                else if (checkReady())
-                    startGame();
             }
 
             float zoomSpeed = playerFollower.zoomSpeed;
@@ -61,32 +59,24 @@ public class MainMenu : MonoBehaviour {
         playerSelectionMenu.enabled = true;
         playerSelectionMenu.setScript(true);
     }
-
-    private bool checkReady()
-    {
-        //check to see if everyone is ready
-        return true;
-    }
-
-    private void startGame()
+    
+    public void startGame()
     {
         inGame = true;
         playerManager.enabled = true;
         playerFollower.enabled = true;
-
-        PlayerSprite[] playerSprites = playerSelectionMenu.getSprites();
-        PlayerColor[] playerColors = playerSelectionMenu.getColors();
-
+        
         //game mode clicking here
-        int scoreCount = playerSelectionMenu.getStockAmount();
+        GameMode gameMode = playerSelectionMenu.GetGameMode();
+        int scoreCount = playerSelectionMenu.getStockCount();
 
-        int playerCount = playerSelectionMenu.getPlayerCount();
+        Player[] players = playerSelectionMenu.getPlayers();
 
         //disable player menu scipt
         playerSelectionMenu.setScript(false);
         playerSelectionMenu.enabled = false;
 
-        playerManager.startGame(playerCount, playerSprites, playerColors, GameMode.Stock, scoreCount);
+        playerManager.startGame(players, gameMode, scoreCount);
         Camera.main.transform.rotation = Quaternion.identity;
         pauseMenue.enabled = true;
     }

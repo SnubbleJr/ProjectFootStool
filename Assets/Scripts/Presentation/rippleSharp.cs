@@ -61,17 +61,22 @@ void Start () {
 
 void splashAtPoint(int x, int y) {
     //fix for inverted y
-
-    int position = (((rows - y) * (cols + 1)) + x);
-	buffer1[position] = splashForce;
-    buffer1[position - 1] = splashForce;
-	buffer1[position + 1] = splashForce;
-	buffer1[position + (cols + 1)] = splashForce;
-	buffer1[position + (cols + 1) + 1] = splashForce;
-	buffer1[position + (cols + 1) - 1] = splashForce;
-	buffer1[position - (cols + 1)] = splashForce;
-	buffer1[position - (cols + 1) + 1] = splashForce;
-	buffer1[position - (cols + 1) - 1] = splashForce;
+    try
+    {
+        int position = (((rows - y) * (cols + 1)) + x);
+        buffer1[position] = splashForce;
+        buffer1[position - 1] = splashForce;
+        buffer1[position + 1] = splashForce;
+        buffer1[position + (cols + 1)] = splashForce;
+        buffer1[position + (cols + 1) + 1] = splashForce;
+        buffer1[position + (cols + 1) - 1] = splashForce;
+        buffer1[position - (cols + 1)] = splashForce;
+        buffer1[position - (cols + 1) + 1] = splashForce;
+        buffer1[position - (cols + 1) - 1] = splashForce;
+    }
+    catch
+    {
+    }
 }
 
 // Update is called once per frame

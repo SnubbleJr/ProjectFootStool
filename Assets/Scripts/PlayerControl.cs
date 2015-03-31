@@ -452,17 +452,17 @@ public class PlayerControl : MonoBehaviour {
         return playerNo;
     }
 
-    public void setPlayer(int playerNumber, List<int> opponentNumbers, Color pColor, Sprite tsprite)
+    public void setPlayer(Player player, List<int> opponentNumbers)
     {
-        color = pColor;
+        color = player.color.color;
         color.a = 1;
         spriteRenderer.color = color;
-        spriteRenderer.sprite = tsprite;
+        spriteRenderer.sprite = player.sprite.sprite;
         groundParticleSystem.startColor = color;
         wallLeftParticleSystem.startColor = color;
         wallRightParticleSystem.startColor = color;
 
-        playerNo = playerNumber;
+        playerNo = player.playerNo;
 
         //set our layermask
         this.gameObject.layer = LayerMask.NameToLayer("Player " + playerNo);
@@ -476,11 +476,11 @@ public class PlayerControl : MonoBehaviour {
         }
 
         //set up the inputs for this player
-        horizontalAxis = "P" + playerNumber + horizontalAxis;
-        jumpKey = "P" + playerNumber + jumpKey;
-        rightKey = "P" + playerNumber + rightKey;
-        leftKey = "P" + playerNumber + leftKey;
-        downKey = "P" + playerNumber + downKey;
+        horizontalAxis = "P" + playerNo + horizontalAxis;
+        jumpKey = "P" + playerNo + jumpKey;
+        rightKey = "P" + playerNo + rightKey;
+        leftKey = "P" + playerNo + leftKey;
+        downKey = "P" + playerNo + downKey;
     }
 
     private void setLayerMask(string opMask)

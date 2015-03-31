@@ -2,6 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 
+//spawns all the x and y tiles for this slector
+//talks to player selection script amamanger
+
 public class PlayerSelectionScript : MonoBehaviour {
 
     public GameObject playerSelecterTile;
@@ -12,9 +15,13 @@ public class PlayerSelectionScript : MonoBehaviour {
     private PlayerSprite[] playerSprites;
     private PlayerColor[] playerColors;
 
+    private ParticleSystem particleSystem;
+
     private int playerNo;
     private string horizontalAxis = "Horizontal";
     private string verticallAxis = "Vertical";
+    private string secondHorizontalAxis = "RHorizontal";
+    private string secondVerticallAxis = "RVertical";
     private string submitKey = "Submit";
     private string cancelKey = "Cancel";
 
@@ -26,21 +33,47 @@ public class PlayerSelectionScript : MonoBehaviour {
     int currentSprite;       //the indexes of the currently selcted ones
     int currentColor;
 
-    private bool active = false;
+    private bool active;
+    private bool greyedOut = false;
     private bool ready = false;
 
-    PlayerSelectionScriptManager manager;
+    private PlayerSelectionScriptManager manager;
+    private PlayerManagerBehaviour playerManager;
+
+    private Camera camera;
+
+    private SpriteRenderer spriteRenderer;
 
 	// Use this for initialization
 	void Start ()
     {
         manager = transform.parent.GetComponent<PlayerSelectionScriptManager>();
 
+        particleSystem = GetComponent<ParticleSystem>();
+
         if (manager == null)
         {
             UnityEngine.Debug.LogError("Cannot find player selector manager parent!");
             this.enabled = false;
         }
+
+        playerManager = GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>();
+
+        if (playerManager == null)
+        {
+            UnityEngine.Debug.LogError("Player manager has not been set!");
+            this.enabled = false;
+        }
+
+        camera = GameObject.Find("Viewing Camera").camera;
+
+        if (camera == null)
+        {
+            UnityEngine.Debug.LogError("Viewing camera can not be found!");
+            this.enabled = false;
+        }
+
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
         //grab the data from the manger
         playerSprites = manager.playerSprites;
@@ -61,6 +94,9 @@ public class PlayerSelectionScript : MonoBehaviour {
             spriteTiles[i].transform.parent = transform;
             spriteTiles[i].setSprite(playerSprites[i]);
             spriteTiles[i].setColor(newColor);
+
+            //set the sprite tiles to render infornt of color tiles
+            tile.GetComponent<SpriteRenderer>().sortingOrder = 1;
         }
 
         //y axis
@@ -82,28 +118,62 @@ public class PlayerSelectionScript : MonoBehaviour {
             moveColorWheel(1);
             moveSpriteWheel(1);
         }
+
+        //disable our selfs, and then wait for input
+        setActive(false);
 	}
-	
+    	
+    void OnGUI()
+    {
+        GUI.skin = playerManager.skin;
+
+        Vector3 screenPoint = camera.WorldToScreenPoint(transform.position);
+
+        if (!active && !greyedOut)
+        {            
+            GUI.Label(new Rect(screenPoint.x -98, camera.pixelHeight - screenPoint.y -52, 300, 70), "<size=25><color=black> Player " + playerNo + "\nPress some buttons</color></size>");
+            GUI.Label(new Rect(screenPoint.x -100, camera.pixelHeight - screenPoint.y -50, 300, 70), "<size=25><color=yellow> Player " + playerNo + "\nPress some buttons</color></size>");
+        }
+
+        if (active && ready)
+        {
+            GUI.Label(new Rect(screenPoint.x -149, camera.pixelHeight - screenPoint.y + 27, 300, 30), "<size=30><color=black>READY!</color></size>");
+            GUI.Label(new Rect(screenPoint.x -150, camera.pixelHeight - screenPoint.y + 25, 300, 30), "<size=30><color=yellow>READY!</color></size>");
+        }
+    }
+
 	// Update is called once per frame
 	void Update ()
     {
-        activationAndReadyInputHandler();
+        //check if particvle system is playing and play if we need it to
+        if (ready && !particleSystem.isPlaying)
+            particleSystem.Play();
 
-        inputCheck();
+        if (!greyedOut)
+        {
+            activationAndReadyInputHandler();
 
-	    //the currently selected sprite will get the currently selected color
-        spriteTiles[currentSprite].setColor(colorTiles[currentColor].getColor());
+            inputCheck();
 
-        //set the currently selected tiles to unavailabe
-        spriteTiles[currentSprite].getSprite().setAvailable(false);
-        colorTiles[currentColor].getColor().setAvailable(false);
+            //the currently selected sprite will get the currently selected color
+            spriteTiles[currentSprite].setColor(colorTiles[currentColor].getColor());
 
-        setTileAlpha();
+            //set the currently selected tiles to unavailabe
+            if (active)
+            {
+                spriteTiles[currentSprite].getSprite().setAvailable(false);
+                colorTiles[currentColor].getColor().setAvailable(false);
+            }
+
+            setTileAlpha();
+
+            rotateWindow();
+        }
 	}
-
+    
     private void inputCheck()
     {
-        if (!ready)
+        if (!ready && active)
         {
             float v = Input.GetAxisRaw(verticallAxis);
 
@@ -120,7 +190,7 @@ public class PlayerSelectionScript : MonoBehaviour {
 
             if (v > 0)
             {
-                if (!hitUp)
+                if (!hitDown)
                 {
                     hitDown = true;
                     moveColorWheel(-1);
@@ -157,26 +227,79 @@ public class PlayerSelectionScript : MonoBehaviour {
 
     private void activationAndReadyInputHandler()
     {
-        //if (ready)
-            //green tick or something
+        if (Input.GetButtonDown(submitKey) && active)
+        {
+            if (!ready)
+            {
+                ready = true;
+                readyUp();
+            }
+        }
 
-        //upon any input,
-        if (Input.GetAxisRaw(verticallAxis) != 0)
-            active = true;
-        if (Input.GetAxisRaw(horizontalAxis) != 0)
-            active = true;
-        if (Input.GetButton(submitKey))
-            active = true;
-        if (Input.GetButton(cancelKey))
-            active = true;
+        //activate upon any input,
+        if (!active && ((Input.GetAxisRaw(verticallAxis) != 0) || (Input.GetAxisRaw(horizontalAxis) != 0) || (Input.GetButton(submitKey))))
+            setActive(true);
 
         if (Input.GetButtonDown(cancelKey))
         {
             if (ready)
+            {
                 ready = false;
+                unready();
+            }
             else
-                active = false;
+                setActive(false);
         }
+    }
+
+    private void readyUp()
+    {
+        //make all other tiles dissapear
+        for (int i = 0; i < spriteTiles.Count; i++)
+        {
+            if (i != currentSprite)
+                spriteTiles[i].gameObject.SetActive(false);
+        }
+
+        for (int i = 0; i < colorTiles.Count; i++)
+        {
+            if (i != currentColor)
+                colorTiles[i].gameObject.SetActive(false);
+        }
+
+        spriteRenderer.enabled = false;
+
+        //enlarges the selected skin
+        spriteTiles[currentSprite].transform.localScale *= 3;
+        colorTiles[currentColor].transform.localScale *= 3;
+        
+        //plays particles behind
+        Color color = colorTiles[currentColor].getColor().color;
+        color.a = 1;
+        particleSystem.startColor = color;
+        particleSystem.Play();
+
+        //plays sound
+    }
+
+    private void unready()
+    {
+        //shrink the selected skin
+        spriteTiles[currentSprite].transform.localScale /= 3;
+        colorTiles[currentColor].transform.localScale /= 3;
+        
+        particleSystem.Stop();
+
+        setActive(true);
+    }
+
+    private void rotateWindow()
+    {
+        //takes in the right ananloge stick on the controller and rotates it just like in meele
+        float h = Input.GetAxis(secondHorizontalAxis);
+        float v = Input.GetAxis(secondVerticallAxis);
+
+        transform.localRotation = Quaternion.Euler(25f * v, 25f * h, 0);
     }
 
     private void moveColorWheel(int direction)
@@ -362,8 +485,15 @@ public class PlayerSelectionScript : MonoBehaviour {
         //set up the inputs for this player
         horizontalAxis = "P" + playerNumber + horizontalAxis;
         verticallAxis = "P" + playerNumber + verticallAxis;
+        secondHorizontalAxis = "P" + playerNumber + secondHorizontalAxis;
+        secondVerticallAxis = "P" + playerNumber + secondVerticallAxis;
         submitKey = "P" + playerNumber + submitKey;
         cancelKey = "P" + playerNumber + cancelKey;
+    }
+
+    public int getPlayer()
+    {
+        return playerNo;
     }
     
     public PlayerSprite getSprite()
@@ -379,10 +509,39 @@ public class PlayerSelectionScript : MonoBehaviour {
     public void setActive(bool value)
     {
         active = value;
+
+        //set each tile in this selector to value
+        foreach (PlayerSelectionTileBehaviour pSTB in spriteTiles)
+            pSTB.gameObject.SetActive(value);
+
+        foreach (PlayerSelectionTileBehaviour pSTB in colorTiles)
+            pSTB.gameObject.SetActive(value);
+
+        //set the tiles we were on to value
+        spriteTiles[currentSprite].getSprite().setAvailable(!value);
+        colorTiles[currentColor].getColor().setAvailable(!value);
+
+        spriteRenderer.enabled = value;
+    }
+
+    public bool getActive()
+    {
+        return active;
     }
 
     public bool getReady()
     {
         return ready;
+    }
+
+    public void setGrey(bool value)
+    {
+        //sets the selector to greyed out and inactive if true
+        greyedOut = value;
+
+        if (value)
+            spriteRenderer.color = Color.gray;
+        else
+            spriteRenderer.color = Color.white;
     }
 }

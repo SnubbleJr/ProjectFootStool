@@ -85,7 +85,7 @@ public class StockGameMode : MonoBehaviour, IGameMode {
             if (playerControls[i].getScore() > 0)
             {
                 playersLeftAlive++;
-                currentAlivePlayer = i+1;
+                currentAlivePlayer = playerControls[i].getPlayerNo();
             }
         }
 

@@ -2,10 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 
+//spawns players and manages them
+
 public class PlayerManagerBehaviour : MonoBehaviour {
 
     public bool debug;
-    public GameObject player;
+    public GameObject playerPrefab;
     public int firstTo = 5;
     public GUISkin skin;
 
@@ -43,7 +45,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             this.enabled = false;
         }
 
-        if (player == null)
+        if (playerPrefab == null)
         {
             UnityEngine.Debug.LogError("No player prefab given to the player manager!");
             this.enabled = false;
@@ -54,83 +56,110 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         fadingColorObjects = GameObject.FindGameObjectsWithTag("FadingColor");
     }
-
-    public void startGame(int playerCount, PlayerSprite[] playerSprites, PlayerColor[] playerColors, GameMode mode, int scoreAmount)
+    
+    public void startGame(Player[] Players, GameMode mode, int scoreAmount)
     {
         gameOver = false;
 
         GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
 
-        this.playerColors = playerColors;
+        playerColors = getPlayerColors(Players);
 
         //set players and spawn them
+        players = new GameObject[Players.Length];
+        spawns = selectSpawns(Players.Length);        
+        //we have to invert the spawn locations, as they go backwards
+        for (int i = 0; i < players.Length; i++)
+            players[i] = Instantiate(playerPrefab, spawns[i].position, Quaternion.identity) as GameObject;
+        
+        initialseCameras();
 
-        players = new GameObject[playerCount];
+        playerControls = initilialsePlayerControl(Players);
 
+        //reseting values for when we start again
+        Time.timeScale = 1;
+        countDown = countDownStart;
+        InvokeRepeating("countdown", 0, 1f);
+        foreach (GameObject obj in changingColorObjects)
+            obj.SendMessage("startFade");
+
+        setGameMode(mode, scoreAmount);
+    }
+    
+    private PlayerColor[] getPlayerColors(Player[] players)
+    {
+        //extracts an array of PlayerColors from players
+        PlayerColor[] colors = new PlayerColor[players.Length];
+
+        for (int i = 0; i < players.Length; i++)
+            colors[i] = players[i].color;
+
+        return colors;
+    }
+
+    private Transform[] selectSpawns(int noOfPlayers)
+    {
         //determin what spawn to use based on player size
         List<Transform> spawnsList = new List<Transform>();
-        
-        foreach(GameObject spawnPointHolder in spawnPointHolders)
+
+        foreach (GameObject spawnPointHolder in spawnPointHolders)
         {
-            if (spawnPointHolder.transform.childCount == players.Length)
+            if (spawnPointHolder.transform.childCount == noOfPlayers)
             {
                 foreach (Transform child in spawnPointHolder.transform)
-                {
                     spawnsList.Add(child);
-                }
             }
         }
 
-        spawns = spawnsList.ToArray();
+        return spawnsList.ToArray();
+    }
 
-        //we have to invert the spawn locations, as they go backwards
-        for (int i = 0; i < players.Length; i++)
-        {
-            players[i] = Instantiate(player, spawns[i].position, Quaternion.identity) as GameObject;
-        }
-        
+    private void initialseCameras()
+    {
         //find camera and give it the players
         mainCamera = Camera.main.GetComponent<PlayerFollower>();
         mainCamera.setPlayers(players);
 
-        //set camer colors
+        //set camera colors
         Color cameaBG = Camera.main.backgroundColor;
         Color inverseCameraBg = new Color(1.0f - cameaBG.r, 1.0f - cameaBG.g, 1.0f - cameaBG.b);
 
         mainCamera.setDebug(debug);
+    }
 
-        //create palyer control array
+    private List<int> getOpponenets(Player player, Player[] Players)
+    {
+        //create a list of opponents by copy Players and remove themselves
+        List<int> opponents = new List<int>();
 
-        playerControls = new PlayerControl[players.Length];
+        for (int i = 0; i < Players.Length; i++)
+            if (Players[i].playerNo != player.playerNo)
+                opponents.Add(Players[i].playerNo);
+
+        return opponents;
+    }
+
+    private PlayerControl[] initilialsePlayerControl(Player[] Players)
+    {
+        //create player control array
+        PlayerControl[] playerControls = new PlayerControl[players.Length];
 
         for (int i = 0; i < playerControls.Length; i++)
         {
             playerControls[i] = players[i].GetComponent<PlayerControl>();
             playerControls[i].setDebug(debug);
 
-            List<int> opponents = new List<int>();
-            for (int j = 0; j < playerControls.Length; j++)
-            {
-                if (i != j)
-                    opponents.Add(j+1);
-            }
+            List<int> opponents = getOpponenets(Players[i], Players);
 
-            playerControls[i].setPlayer(i+1, opponents, playerColors[i].color, playerSprites[i].sprite);
+            playerControls[i].setPlayer(Players[i], opponents);
             playerControls[i].enabled = false;
         }
 
-        //reseting values for when we start again
-        Time.timeScale = 1;
+        return playerControls;
+    }
 
-        countDown = countDownStart;
-
-        InvokeRepeating("countdown", 0, 1f);
-
-        foreach (GameObject obj in changingColorObjects)
-        {
-            obj.SendMessage("startFade");
-        }
-
+    private void setGameMode(GameMode mode, int scoreAmount)
+    {
         //setting stock here just for testing
         switch (mode)
         {
