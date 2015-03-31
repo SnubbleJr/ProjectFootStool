@@ -8,6 +8,9 @@ using System.Collections.Generic;
 public class PlayerSelectionScript : MonoBehaviour {
 
     public GameObject playerSelecterTile;
+    public AudioClip colorSound;
+    public AudioClip spriteSound;
+    public AudioClip selectionSound;
 
     private List<PlayerSelectionTileBehaviour> spriteTiles = new List<PlayerSelectionTileBehaviour>();
     private List<PlayerSelectionTileBehaviour> colorTiles = new List<PlayerSelectionTileBehaviour>();
@@ -280,6 +283,7 @@ public class PlayerSelectionScript : MonoBehaviour {
         particleSystem.Play();
 
         //plays sound
+        audio.PlayOneShot(selectionSound, 1f);
     }
 
     private void unready()
@@ -320,6 +324,9 @@ public class PlayerSelectionScript : MonoBehaviour {
             if (!colorTiles[currentColor].getColor().getAvailable())
                 moveColorWheel(-1);
         }
+
+        //play sound
+        audio.PlayOneShot(colorSound, 0.3f);
     }
 
     private void moveSpriteWheel(int direction)
@@ -346,6 +353,9 @@ public class PlayerSelectionScript : MonoBehaviour {
             if (!spriteTiles[currentSprite].getSprite().getAvailable())
                 moveSpriteWheel(-1);
         }
+
+        //play sound
+        audio.PlayOneShot(spriteSound, 0.3f);
     }
 
     private void moveColorWheelUp()

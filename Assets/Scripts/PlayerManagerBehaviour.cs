@@ -28,6 +28,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
     private StockGameMode stockGame;
     private KOTHGameMode kothGame;
+    private RaceGameMode raceGame;
 
     private int winner;
     private bool gameOver;
@@ -53,12 +54,13 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         stockGame = GetComponent<StockGameMode>();
         kothGame = GetComponent<KOTHGameMode>();
-
-        fadingColorObjects = GameObject.FindGameObjectsWithTag("FadingColor");
+        raceGame = GetComponent<RaceGameMode>();
     }
     
     public void startGame(Player[] Players, GameMode mode, int scoreAmount)
     {
+        fadingColorObjects = GameObject.FindGameObjectsWithTag("FadingColor");
+
         gameOver = false;
 
         GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
@@ -171,6 +173,10 @@ public class PlayerManagerBehaviour : MonoBehaviour {
                 kothGame.enabled = true;
                 gameMode = kothGame;
                 break;
+            case GameMode.Race:
+                raceGame.enabled = true;
+                gameMode = raceGame;
+                break;
         }
 
         gameMode.setScore(scoreAmount);
@@ -257,8 +263,8 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         winnerTrans = gameMode.playerHit(playerControl);
 
         //check what gamemode we are in
-        //stock game mode, no respawning
-        if (stockGame.enabled == true)
+        //stock and race game mode, no respawning
+        if (stockGame.enabled == true || raceGame.enabled == true)
         {
             //if round winner
             if (winnerTrans != null)
@@ -290,6 +296,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             }
 
             mainCamera.resetZoom();
+            gameMode.restartRound();
 
             for (int i = 0; i < players.Length; i++)
             {
@@ -342,6 +349,8 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         kothGame.deactivateHills();
         kothGame.enabled = false;
+
+        raceGame.enabled = false;
 
         mainCamera.start = false;
         

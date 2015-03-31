@@ -34,7 +34,9 @@ public class PlayerControl : MonoBehaviour {
     private bool landed = false;
     private bool firstTimeOnWall = false;
     private bool hasBeenOnWall = false;
-    
+
+    private Collider2D fallThroughPlat;
+
     private bool letGoOfJump;
     private float h;
 
@@ -183,6 +185,12 @@ public class PlayerControl : MonoBehaviour {
 
         down = Input.GetButton(downKey) || Input.GetAxisRaw(downKey) == 1;
 
+        // If down pressed and on fallthough platofrom, remove their collision
+        if (down && fallThroughPlat != null && !inAir)
+            Physics2D.IgnoreCollision(GetComponent<Collider2D>(), fallThroughPlat, true);
+        else
+            Physics2D.IgnoreCollision(GetComponent<Collider2D>(), fallThroughPlat, false);
+
         //if jump pressed
         if(Input.GetButtonDown(jumpKey))
         {
@@ -194,7 +202,7 @@ public class PlayerControl : MonoBehaviour {
         }
 	}
 
-    void groundChecker()
+    private void groundChecker()
     {
         //here we check if wer'e on ground to reset jumps
         if (grounded)
@@ -213,7 +221,7 @@ public class PlayerControl : MonoBehaviour {
         }
     }
 
-    void wallChecker()
+    private void wallChecker()
     {
         //if on wall, set gorunded, so we can jump again
         if (onWall)
@@ -245,7 +253,16 @@ public class PlayerControl : MonoBehaviour {
         }
     }
 
-    void die()
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        //unset the platform, also make it care about those colission again
+        Physics2D.IgnoreCollision(GetComponent<Collider2D>(), fallThroughPlat, false);
+
+        if (collision.gameObject.CompareTag("FallThroughPlatform"))
+            fallThroughPlat = collision.collider;
+    }
+
+    private void die()
     {
         audio.PlayOneShot(deathSound);
         
@@ -261,7 +278,7 @@ public class PlayerControl : MonoBehaviour {
         viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
     }
 
-    void inputHandler()
+    private void inputHandler()
     {
         // Snapping for analogsticks
         if (h > 0)
@@ -272,20 +289,20 @@ public class PlayerControl : MonoBehaviour {
         // the last key to be pressed takes priority
         if (h == 0)
             h = lastPressed;
-        
+                
         // If the player is holding down, apply fall force, unless they're on the floor
         if (down && !grounded)
             rigidbody2D.AddForce(Vector2.up *-1 * fastFallForce);
 
         // If the player is changing direction or letting go of controls, stop all horizontal movement, but only on ground
-        if (h != Mathf.Sign(rigidbody2D.velocity.x) && !inAir)
+        if (h != Mathf.Sign(rigidbody2D.velocity.x))
             rigidbody2D.velocity = new Vector2(0f, rigidbody2D.velocity.y);
 
         // If the player is changing direction or hasn't reached maxSpeed yet, add a force
         if (h * rigidbody2D.velocity.x < maxSpeed)
         {
             //cling if moved into wall
-
+            
             rigidbody2D.AddForce(Vector2.right * h * moveForce);
                 
             //flip sprite
@@ -300,7 +317,7 @@ public class PlayerControl : MonoBehaviour {
             rigidbody2D.velocity = new Vector2(Mathf.Sign(rigidbody2D.velocity.x) * maxSpeed, rigidbody2D.velocity.y);
     }
     
-    void jumpHandler()
+    private void jumpHandler()
     {        
         //if hit wall with force, play sound and particles, and screen shake
         //only do this if we've hit thge wall for the first time
@@ -424,6 +441,12 @@ public class PlayerControl : MonoBehaviour {
         Debug.DrawLine(groundCheckRight.position, playerBottomRight, Color.yellow);
     }
 
+    public void setHit()
+    {
+        hit = true;
+        die();
+    }
+
     public void respawn()
     {
         hit = false;
@@ -501,7 +524,7 @@ public class PlayerControl : MonoBehaviour {
 
     public void increaseScore()
     {
-        score--;
+        score++;
     }
 
     public void decreaseScore()

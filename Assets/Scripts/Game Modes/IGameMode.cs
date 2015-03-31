@@ -5,6 +5,7 @@ public enum GameMode
 {
     Stock,
     Koth,
+    Race,
 };
 
 public interface IGameMode
@@ -20,4 +21,6 @@ public interface IGameMode
     void setColors(PlayerColor[] col);
 
     void setScore(int score);
+
+    void restartRound();
 }

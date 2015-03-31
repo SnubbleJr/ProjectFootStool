@@ -182,4 +182,8 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
     {
         timeToWin = score;
     }
+
+    public void restartRound()
+    {
+    }
 }

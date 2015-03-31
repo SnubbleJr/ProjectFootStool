@@ -123,9 +123,9 @@ public class PlayerFollower : MonoBehaviour {
             {
                 if (invertCyl1)
                 {
-                    DestroyImmediate(invertCyl1);
+                    Destroy(invertCyl1);
 
-                    DestroyImmediate(invertCyl2);
+                    Destroy(invertCyl2);
                 }
                 invertCyl1 = Instantiate(invertCylinder, trans.position, Quaternion.identity) as GameObject;
                 spawnCly1 = false;
@@ -133,7 +133,7 @@ public class PlayerFollower : MonoBehaviour {
             else
             {
                 if (invertCyl2)
-                    DestroyImmediate(invertCyl2);
+                    Destroy(invertCyl2);
 
                 //find if cl12 esixsts, and push i back slightly so we don't overlap
                 if (invertCyl1)

@@ -9,6 +9,7 @@ public class MainMenu : MonoBehaviour {
     private PlayerFollower playerFollower;
     private PauseMenuScript pauseMenue;
     private PlayerSelectionMenuScript playerSelectionMenu;
+    private LevelManagerBehaviour levelManager;
 
     private float cameraSize;
     private Vector3 cameraPos;
@@ -20,6 +21,7 @@ public class MainMenu : MonoBehaviour {
         cameraSize = Camera.main.orthographicSize;
         cameraPos = Camera.main.transform.position;
         playerManager = GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>();
+        levelManager = GameObject.Find("Level Manager").GetComponent<LevelManagerBehaviour>();
         playerFollower = Camera.main.GetComponent<PlayerFollower>();
         pauseMenue = GetComponent<PauseMenuScript>();
         playerSelectionMenu = GetComponent<PlayerSelectionMenuScript>();
@@ -69,6 +71,8 @@ public class MainMenu : MonoBehaviour {
         //game mode clicking here
         GameMode gameMode = playerSelectionMenu.GetGameMode();
         int scoreCount = playerSelectionMenu.getStockCount();
+
+        levelManager.setLevel(gameMode);
 
         Player[] players = playerSelectionMenu.getPlayers();
 

@@ -3,6 +3,8 @@ using System.Collections;
 
 public class StockGameMode : MonoBehaviour, IGameMode {
 
+    //game mode is stock, everytime a player is hit they lose a life, the last person left standing wins
+
     public int stockCount;
 
     private PlayerManagerBehaviour playerManager;
@@ -118,5 +120,9 @@ public class StockGameMode : MonoBehaviour, IGameMode {
     public void setScore(int score)
     {
         stockCount = score;
+    }
+
+    public void restartRound()
+    {
     }
 }

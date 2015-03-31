@@ -8,7 +8,7 @@ public class GameModeSelectionScript : MonoBehaviour {
     private PlayerManagerBehaviour playerManager;
     private GameModeSelectionScriptManager gameModeSelectionManager;
 
-    private GameMode[] gameModes = { GameMode.Stock, GameMode.Koth };
+    private GameMode[] gameModes = { GameMode.Stock, GameMode.Koth, GameMode.Race };
     private int gameMode = 0;
     private int stocks = 4;
     private int prevGameMode;
@@ -51,6 +51,9 @@ public class GameModeSelectionScript : MonoBehaviour {
         string modeColor;
         string stockColor;
 
+        string modeTopBotColor = "#ffffff88"; ;
+        string stockTopBotColor = "#ffffff88"; ;
+
         string modeTextTop;
         string modeTextBot;
         string stockTextTop;
@@ -74,24 +77,24 @@ public class GameModeSelectionScript : MonoBehaviour {
             if (stockSelected)
             {
                 modeColor = "yellow";
-                stockColor = "white";
+                stockColor = "white";      
 
                 modeSelectionTextR = ": ";
 
                 modeTextTop = "";
                 modeTextBot = "";
-                stockTextTop = "  /\\";
-                stockTextBot = "\\/";
+                stockTextTop = "  " + getNextStock(-1).ToString();
+                stockTextBot = getNextStock(1).ToString();
             }
             else
             {
                 modeColor = "white";
-                stockColor = "yellow";
+                stockColor = "yellow";                             
 
                 modeSelectionTextR = " ";
 
-                modeTextTop = "  /\\";
-                modeTextBot = "\\/";
+                modeTextTop = "  " + System.Enum.GetName(typeof(GameMode), getNextGameMode(-1));
+                modeTextBot = "" + System.Enum.GetName(typeof(GameMode), getNextGameMode(1));
                 stockTextTop = "";
                 stockTextBot = "";
             }
@@ -101,11 +104,11 @@ public class GameModeSelectionScript : MonoBehaviour {
         string textStringFG = "<size=30><color=" + modeColor + ">" + System.Enum.GetName(typeof(GameMode), gameMode) + "s" + modeSelectionTextR + "</color><color=" + stockColor + ">" + stocks.ToString() + "</color></size>";
 
         //selectors gui part
-        GUI.Label(new Rect(((Screen.width / 8) * 3) - 248, Screen.height / 2 - 28, 450, 30), "<size=30><color=black>" + modeTextTop + "            " + stockTextTop + "</color></size>");
-        GUI.Label(new Rect(((Screen.width / 8) * 3) - 250, Screen.height / 2 - 30, 450, 30), "<size=30><color=" + modeColor + ">" + modeTextTop + "            " + "</color><color=" + stockColor + ">" + stockTextTop + "</color></size>");
+        GUI.Label(new Rect(((Screen.width / 8) * 3) - 248, Screen.height / 2 - 28, 450, 30), "<size=30><color=#00000088>" + modeTextTop + "           " + stockTextTop + "</color></size>");
+        GUI.Label(new Rect(((Screen.width / 8) * 3) - 250, Screen.height / 2 - 30, 450, 30), "<size=30><color=" + modeTopBotColor + ">" + modeTextTop + "            " + "</color><color=" + stockTopBotColor + ">" + stockTextTop + "</color></size>");
 
-        GUI.Label(new Rect(((Screen.width / 8) * 3) - 248, Screen.height / 2 + 32, 450, 30), "<size=30><color=black>" + modeTextBot + "            " + stockTextBot + "</color></size>");
-        GUI.Label(new Rect(((Screen.width / 8) * 3) - 250, Screen.height / 2 + 30, 450, 30), "<size=30><color=" + modeColor + ">" + modeTextBot + "            " + "</color><color=" + stockColor + ">" + stockTextBot + "</color></size>");
+        GUI.Label(new Rect(((Screen.width / 8) * 3) - 248, Screen.height / 2 + 32, 450, 30), "<size=30><color=#00000088>" + modeTextBot + "           " + stockTextBot + "</color></size>");
+        GUI.Label(new Rect(((Screen.width / 8) * 3) - 250, Screen.height / 2 + 30, 450, 30), "<size=30><color=" + modeTopBotColor + ">" + modeTextBot + "            " + "</color><color=" + stockTopBotColor + ">" + stockTextBot + "</color></size>");
 
         //actual content
         GUI.Label(new Rect(((Screen.width / 8)*3) - 248, Screen.height / 2 + 2, 500, 30), textStringBG);
@@ -189,24 +192,38 @@ public class GameModeSelectionScript : MonoBehaviour {
     {
         if (stockSelected)
         {
-            stocks -= direction;
-
-            if (stocks <= 0)
-                stocks = 1;
-
-            if (stocks >= 99)
-                stocks = 99;
+            stocks = getNextStock(direction);
         }
         else
         {
-            gameMode += direction;
-
-            if (gameMode < 0)
-                gameMode = gameModes.Length - 1;
-
-            if (gameMode > gameModes.Length - 1)
-                gameMode = 0;
+            gameMode = getNextGameMode(direction);
         }
+    }
+
+    private int getNextGameMode(int direction)
+    {
+        int mode = gameMode - direction;
+
+        if (mode < 0)
+            mode = gameModes.Length - 1;
+
+        if (mode > gameModes.Length - 1)
+            mode = 0;
+
+        return mode;
+    }
+
+    private int getNextStock(int direction)
+    {
+        int stock = stocks - direction;
+
+        if (stock <= 0)
+            stock = 1;
+
+        if (stock >= 99)
+            stock = 99;
+
+        return stock;
     }
 
     private void cancelChanges()
