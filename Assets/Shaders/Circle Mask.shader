@@ -16,7 +16,7 @@
         // Grab the screen behind the object into _GrabTexture
         
 		CGPROGRAM
-		#pragma surface surf NoLighting
+		#pragma surface surf NoLighting keepalpha
  
 		fixed4 LightingNoLighting(SurfaceOutput s, fixed3 lightDir, fixed atten)
 		{
