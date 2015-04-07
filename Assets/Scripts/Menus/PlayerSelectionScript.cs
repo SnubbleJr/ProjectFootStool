@@ -47,12 +47,16 @@ public class PlayerSelectionScript : MonoBehaviour {
 
     private SpriteRenderer spriteRenderer;
 
+    private AudioSource audio;
+
 	// Use this for initialization
 	void Start ()
     {
         manager = transform.parent.GetComponent<PlayerSelectionScriptManager>();
 
         particleSystem = GetComponent<ParticleSystem>();
+
+        audio = GetComponent<AudioSource>();
 
         if (manager == null)
         {
@@ -68,7 +72,7 @@ public class PlayerSelectionScript : MonoBehaviour {
             this.enabled = false;
         }
 
-        camera = GameObject.Find("Viewing Camera").camera;
+        camera = GameObject.Find("Viewing Camera").GetComponent<Camera>();
 
         if (camera == null)
         {
@@ -132,16 +136,18 @@ public class PlayerSelectionScript : MonoBehaviour {
 
         Vector3 screenPoint = camera.WorldToScreenPoint(transform.position);
 
+        int height = camera.pixelHeight;
+
         if (!active && !greyedOut)
         {            
-            GUI.Label(new Rect(screenPoint.x -98, camera.pixelHeight - screenPoint.y -52, 300, 70), "<size=25><color=black> Player " + playerNo + "\nPress some buttons</color></size>");
-            GUI.Label(new Rect(screenPoint.x -100, camera.pixelHeight - screenPoint.y -50, 300, 70), "<size=25><color=yellow> Player " + playerNo + "\nPress some buttons</color></size>");
+            GUI.Label(new Rect(screenPoint.x -98, height - screenPoint.y -52, 300, 70), "<size=25><color=black> Player " + playerNo + "\nPress some buttons</color></size>");
+            GUI.Label(new Rect(screenPoint.x -100, height - screenPoint.y -50, 300, 70), "<size=25><color=yellow> Player " + playerNo + "\nPress some buttons</color></size>");
         }
 
         if (active && ready)
         {
-            GUI.Label(new Rect(screenPoint.x -149, camera.pixelHeight - screenPoint.y + 27, 300, 30), "<size=30><color=black>READY!</color></size>");
-            GUI.Label(new Rect(screenPoint.x -150, camera.pixelHeight - screenPoint.y + 25, 300, 30), "<size=30><color=yellow>READY!</color></size>");
+            GUI.Label(new Rect(screenPoint.x -149, height - screenPoint.y + 27, 300, 30), "<size=30><color=black>READY!</color></size>");
+            GUI.Label(new Rect(screenPoint.x -150, height - screenPoint.y + 25, 300, 30), "<size=30><color=yellow>READY!</color></size>");
         }
     }
 

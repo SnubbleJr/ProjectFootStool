@@ -86,9 +86,17 @@ public class PlayerControl : MonoBehaviour {
 
     private GameObject viewingCamera;
 
+    private Rigidbody2D rigidbody2D;
+    private Collider2D collider2D;
+    private AudioSource audio;
+
 	// Use this for initialization
     void Awake()
     {
+        rigidbody2D = GetComponent<Rigidbody2D>();
+        collider2D = rigidbody2D.GetComponent<Collider2D>();
+        audio = GetComponent<AudioSource>();
+
         headCheck = transform.FindChild("HeadCheck");
 
         headCheckLeft = headCheck.FindChild("HeadCheckL");
@@ -139,10 +147,10 @@ public class PlayerControl : MonoBehaviour {
 	void Update ()
     {
         //get player boundries - HAS to be in update
-        playerTopLeft = new Vector2(transform.position.x - rigidbody2D.collider2D.bounds.extents.x, transform.position.y + rigidbody2D.collider2D.bounds.extents.y);
-        playerTopRight = new Vector2(transform.position.x + rigidbody2D.collider2D.bounds.extents.x, transform.position.y + rigidbody2D.collider2D.bounds.extents.y);
-        playerBottomLeft = new Vector2(transform.position.x - rigidbody2D.collider2D.bounds.extents.x, transform.position.y - rigidbody2D.collider2D.bounds.extents.y);
-        playerBottomRight = new Vector2(transform.position.x + rigidbody2D.collider2D.bounds.extents.x, transform.position.y - rigidbody2D.collider2D.bounds.extents.y);
+        playerTopLeft = new Vector2(transform.position.x - collider2D.bounds.extents.x, transform.position.y + collider2D.bounds.extents.y);
+        playerTopRight = new Vector2(transform.position.x + collider2D.bounds.extents.x, transform.position.y + collider2D.bounds.extents.y);
+        playerBottomLeft = new Vector2(transform.position.x - collider2D.bounds.extents.x, transform.position.y - collider2D.bounds.extents.y);
+        playerBottomRight = new Vector2(transform.position.x + collider2D.bounds.extents.x, transform.position.y - collider2D.bounds.extents.y);
 
         if (debug)
         {
@@ -416,8 +424,8 @@ public class PlayerControl : MonoBehaviour {
 
     private void debugDrawHitBoxes()
     {
-        Vector2 playerBottomLeft = new Vector2(transform.position.x - rigidbody2D.collider2D.bounds.extents.x, transform.position.y - rigidbody2D.collider2D.bounds.extents.y);
-        Vector2 playerBottomRight = new Vector2(transform.position.x + rigidbody2D.collider2D.bounds.extents.x, transform.position.y - rigidbody2D.collider2D.bounds.extents.y);
+        Vector2 playerBottomLeft = new Vector2(transform.position.x - collider2D.bounds.extents.x, transform.position.y - collider2D.bounds.extents.y);
+        Vector2 playerBottomRight = new Vector2(transform.position.x + collider2D.bounds.extents.x, transform.position.y - collider2D.bounds.extents.y);
 
         Debug.DrawLine(playerTopLeft, playerTopRight, Color.green);
         Debug.DrawLine(playerTopRight, playerBottomRight, Color.green);

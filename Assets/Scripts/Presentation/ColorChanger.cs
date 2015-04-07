@@ -9,9 +9,13 @@ public class ColorChanger : MonoBehaviour {
 
     private Color color;
     private bool go = false;
-	
+
+    private Renderer renderer;
+
     void Start()
     {
+        renderer = GetComponent<Renderer>();
+
         color = renderer.material.color;
     }
 

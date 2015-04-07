@@ -5,11 +5,13 @@ public class CameraColorChanger : MonoBehaviour {
 
     public Color changeColor;
 
+    private Camera camera;
     private Color color;
     private bool go = false;
 
     void Start()
     {
+        camera = GetComponent<Camera>();
         color = camera.backgroundColor;
     }
 

@@ -30,7 +30,7 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update () 
     {
-        if (Input.GetButtonDown("Submit"))
+        if (Input.GetButtonDown("StartGame"))
         {
             if (checkReady())
                 mainMenu.startGame();

@@ -28,9 +28,13 @@ public class PlayerFollower : MonoBehaviour {
     private GameObject invertCyl1, invertCyl2;
     private bool spawnCly1 = true;
 
+    private Camera camera;
+
 	// Use this for initialization
-	void Awake () 
+	void Awake ()
     {
+        camera = GetComponent<Camera>();
+
         minRect = new Rect((1-min)/2, (1-min)/2, min, min);
         maxRect = new Rect((1-max)/2, (1-max)/2, max, max);
 

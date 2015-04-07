@@ -7,9 +7,12 @@ public class BackgroundBackBehaviour : MonoBehaviour {
     //this means we get a transition niceley
 
     private Color color;
+    private Renderer renderer;
 
     void Start ()
     {
+        renderer = GetComponent<Renderer>();
+
         color = Camera.main.backgroundColor;
     }
 

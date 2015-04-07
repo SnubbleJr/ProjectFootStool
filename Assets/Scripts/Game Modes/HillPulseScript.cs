@@ -10,9 +10,12 @@ public class HillPulseScript : MonoBehaviour {
     private float newAlpha;
     private Color color;
 
+    private Renderer renderer;
+
 	// Use this for initialization
 	void Start ()
     {
+        renderer = GetComponent<Renderer>();
         color = renderer.material.color;
 	}
 	
