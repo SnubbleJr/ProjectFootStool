@@ -31,8 +31,8 @@ public class GameModeSelectionScriptManager : MonoBehaviour {
 
     private void activateSelecter(int playerNo)
     {
-        //activate only if someone isn't already in there, and if that person is currently in game
-        if (!gameModeSelector.getActive() && playerSelectorManger.getSelectorActive(playerNo))
+        //activate only if someone isn't already in there, and if that person is currently in game and not ready
+        if (!gameModeSelector.getActive() && playerSelectorManger.getSelectorActive(playerNo) &! playerSelectorManger.getSelectorReady(playerNo))
         {
             //tell manager to disable that player selector the time being
             //wake up game mode slector, and give it the pplayer it should be listening to

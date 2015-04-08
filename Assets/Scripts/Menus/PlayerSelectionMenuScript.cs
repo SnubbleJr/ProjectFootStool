@@ -14,6 +14,8 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
     private GameModeSelectionScriptManager gameModeSelecterManager;
     private MainMenu mainMenu;
 
+    private bool allReady = false;
+
 	// Use this for initialization
 	void Awake ()
     {
@@ -27,14 +29,22 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         }
 	}
 	
+    void OnGUI()
+    {
+        GUI.skin = playerManager.skin;
+        GUI.skin.box.padding.left = ((Screen.width / 8) * 3) -150;
+
+        if(allReady)
+            GUI.Box(new Rect(-30, Screen.height / 2 - 8, Screen.width + 60, 50), "<size=30><color=white>PRESS START (SPACE)</color></size>");
+    }
+
 	// Update is called once per frame
 	void Update () 
     {
-        if (Input.GetButtonDown("StartGame"))
-        {
-            if (checkReady())
-                mainMenu.startGame();
-        }
+        allReady = checkReady();
+
+        if (Input.GetButtonDown("StartGame") && allReady)
+            mainMenu.startGame();
 	}
 
     private bool checkReady()

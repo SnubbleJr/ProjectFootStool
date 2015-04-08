@@ -205,7 +205,8 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
             foreach (PlayerControl playerControl in playerControls)
             {
-                playerControl.enabled = true;
+                if(playerControl)
+                    playerControl.enabled = true;
             }
         }
     }
@@ -334,10 +335,10 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         if (kothGame.enabled == true)
             mainCamera.zoomInOnWinner(players[winner-1].transform);
 
-        Invoke("reloadLevel", 0.8f);
+        Invoke("endMatch", 0.8f);
     }
 
-    private void reloadLevel()
+    public void endMatch()
     {
         foreach (GameObject player in players)
         {

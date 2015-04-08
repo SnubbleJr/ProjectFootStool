@@ -35,6 +35,9 @@ public class MainMenu : MonoBehaviour {
 
             GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 30), "<size=30><color=black>PROJECTFOOTSTOOL</color></size><size=15><color=black> v " + versionNumber + "</color></size>");
             GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 30), "<size=30>PROJECT<color=yellow>FOOT</color>STOOL</size><size=15><color=yellow> v " + versionNumber + "</color></size>");
+
+            GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 52, 500, 50), "<size=15><color=black>PRESS START (SPACE)</color></size>");
+            GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2 + 50, 500, 50), "<size=15><color=white>PRESS START (SPACE)</color></size>");
         }
     }
 

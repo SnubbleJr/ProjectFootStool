@@ -174,4 +174,10 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         //returns weither or not the selector is active
         return playerSelecters[id - 1].getActive();
     }
+
+    public bool getSelectorReady(int id)
+    {
+        //returns weither or not the selector is active
+        return playerSelecters[id - 1].getReady();
+    }
 }
