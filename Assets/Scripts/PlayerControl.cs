@@ -272,7 +272,7 @@ public class PlayerControl : MonoBehaviour {
 
     private void die()
     {
-        audio.PlayOneShot(deathSound);
+        audio.PlayOneShot(deathSound, audio.volume * SFXVolumeSliderElement.volume);
         
         dead = true;
         spriteRenderer.color = Color.grey;
@@ -359,7 +359,7 @@ public class PlayerControl : MonoBehaviour {
         {
             landed = false;
             //landing sound
-            audio.PlayOneShot(landingSound);
+            audio.PlayOneShot(landingSound, audio.volume * SFXVolumeSliderElement.volume);
 
             groundParticleSystem.Play();
             //screen shake
@@ -382,7 +382,7 @@ public class PlayerControl : MonoBehaviour {
 
         if (jump)
         {
-            audio.PlayOneShot(jumpSound);
+            audio.PlayOneShot(jumpSound, audio.volume * SFXVolumeSliderElement.volume);
 
             //nulify current force from gravity
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
@@ -409,7 +409,7 @@ public class PlayerControl : MonoBehaviour {
         }
         if (doubleJump)
         {
-            audio.PlayOneShot(dJumpSound);
+            audio.PlayOneShot(dJumpSound, audio.volume * SFXVolumeSliderElement.volume);
 
             //nulify current force from gravity
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
@@ -457,6 +457,9 @@ public class PlayerControl : MonoBehaviour {
 
     public void respawn()
     {
+        //null momentum
+        rigidbody2D.velocity = Vector2.zero;
+
         hit = false;
         dead = false;
 

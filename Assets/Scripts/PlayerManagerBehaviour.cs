@@ -78,12 +78,16 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         playerControls = initilialsePlayerControl(Players);
 
-        //reseting values for when we start again
+        //reseting values
         Time.timeScale = 1;
         countDown = countDownStart;
+        CancelInvoke("countdown");
         InvokeRepeating("countdown", 0, 1f);
         foreach (GameObject obj in changingColorObjects)
             obj.SendMessage("startFade");
+
+        //now set the camera to not follow disabled players
+        mainCamera.startedGame = false;
 
         setGameMode(mode, scoreAmount);
     }
@@ -200,8 +204,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         //checked at 0, so players are active on go
         if (countDown == 0)
         {
-            //now set the camera to not follow disabled players
-            mainCamera.start = true;
+            mainCamera.startedGame = true;
 
             foreach (PlayerControl playerControl in playerControls)
             {
@@ -253,11 +256,6 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     {
         playerControl.enabled = false;
         
-        foreach (GameObject obj in fadingColorObjects)
-            obj.SendMessage("setFade", true);
-
-        Camera.main.gameObject.SendMessage("setFade", true);
-
         Transform winnerTrans = null;
                 
         //call the current game mode with player hit
@@ -270,6 +268,11 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             //if round winner
             if (winnerTrans != null)
             {
+                foreach (GameObject obj in fadingColorObjects)
+                    obj.SendMessage("setFade", true);
+
+                Camera.main.gameObject.SendMessage("setFade", true);
+
                 mainCamera.zoomInOnWinner(winnerTrans);
 
                 //respawn all if we don't have a winner
@@ -331,9 +334,16 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     {
         //play sounds
 
-        //zoom in on winner if it's a koth game
+        //do normal end game stuff in on winner if it's a koth game
         if (kothGame.enabled == true)
-            mainCamera.zoomInOnWinner(players[winner-1].transform);
+        {
+            foreach (GameObject obj in fadingColorObjects)
+                obj.SendMessage("setFade", true);
+
+            Camera.main.gameObject.SendMessage("setFade", true);
+
+            mainCamera.zoomInOnWinner(players[winner - 1].transform);
+        }
 
         Invoke("endMatch", 0.8f);
     }
@@ -345,6 +355,19 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             Destroy(player);
         }
 
+        GameObject.Find("Menu Manager").GetComponent<MainMenu>().exitLevel();
+
+        Camera.main.gameObject.SendMessage("setFade", false);
+
+        foreach (GameObject obj in fadingColorObjects)
+        {
+            obj.SendMessage("setFade", false);
+        }
+
+        GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
+        foreach (GameObject obj in changingColorObjects)
+            obj.SendMessage("setFade", false);
+
         //set all gamemodes to false
         stockGame.enabled = false;
 
@@ -353,17 +376,8 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         raceGame.enabled = false;
 
-        mainCamera.start = false;
+        mainCamera.startedGame = false;
         
         winner = 0;
-
-        GameObject.Find("Menu Manager").GetComponent<MainMenu>().resetGame();
-
-        Camera.main.gameObject.SendMessage("setFade", false);
-
-        foreach (GameObject obj in fadingColorObjects)
-        {
-            obj.SendMessage("setFade", false);
-        }
     }
 }

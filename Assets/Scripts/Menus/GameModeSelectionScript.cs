@@ -276,6 +276,11 @@ public class GameModeSelectionScript : MonoBehaviour {
         return gameModes[gameMode];
     }
 
+    public void setGameMode(GameMode gMode)
+    {
+        gameMode = (int)gMode;
+    }
+
     public int getStockCount()
     {
         return stocks;

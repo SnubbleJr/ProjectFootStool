@@ -12,7 +12,7 @@ public class PlayerFollower : MonoBehaviour {
     public float zoomSpeed;
     public float height;
 
-    public bool start = false;          //used as an override fro the beggining of of the game - so we get a zoomout
+    public bool startedGame = false;          //used as an override fro the beggining of of the game - so we get a zoomout
 
     public GameObject invertCylinder;
 
@@ -79,7 +79,7 @@ public class PlayerFollower : MonoBehaviour {
             //check if someone is out of bounds
             foreach (GameObject player in players)
             {
-                if (player.GetComponent<PlayerControl>().enabled == true || !start)
+                if (player.GetComponent<PlayerControl>().enabled == true || !startedGame)
                 {
                     inMin = minRect.Contains(camera.WorldToViewportPoint(player.transform.position)) && inMin;
                     inMax = maxRect.Contains(camera.WorldToViewportPoint(player.transform.position)) && inMax;
@@ -101,7 +101,7 @@ public class PlayerFollower : MonoBehaviour {
 
             foreach (GameObject player in players)
             {
-                if (player.GetComponent<PlayerControl>().enabled == true || !start)
+                if (player.GetComponent<PlayerControl>().enabled == true || !startedGame)
                 {
                     midPoint += player.transform.position;
                     numActivePlayers++;
@@ -115,6 +115,8 @@ public class PlayerFollower : MonoBehaviour {
 
             transform.position = Vector3.Lerp(transform.position, midPoint, zoomSpeed * 3 * Time.deltaTime);
         }
+
+        Time.fixedDeltaTime = 0.02F * Time.timeScale;
 	}
 
     public void spawnInverter(Transform trans)
@@ -174,6 +176,7 @@ public class PlayerFollower : MonoBehaviour {
         camera.orthographicSize = 5;
         camera.transform.rotation = Quaternion.identity;
         Time.timeScale = 1;
+        Time.fixedDeltaTime = 0.02F * Time.timeScale;
     }
 
     public void setDebug(bool value)

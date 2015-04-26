@@ -65,4 +65,9 @@ public class GameModeSelectionScriptManager : MonoBehaviour {
     {
         return gameModeSelector.getStockCount();
     }
+
+    public void setGameMode(GameMode gameMode)
+    {
+        gameModeSelector.setGameMode(gameMode);
+    }
 }

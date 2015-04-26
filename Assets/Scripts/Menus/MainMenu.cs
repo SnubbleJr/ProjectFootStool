@@ -3,13 +3,15 @@ using System.Collections;
 
 public class MainMenu : MonoBehaviour {
 
-    public string versionNumber;
+    public bool playPlayerMusic = false;
+    public bool playGameMusic = false;
 
     private PlayerManagerBehaviour playerManager;
     private PlayerFollower playerFollower;
     private PauseMenuScript pauseMenue;
     private PlayerSelectionMenuScript playerSelectionMenu;
     private LevelManagerBehaviour levelManager;
+    private MusicComponent musicComponent;
 
     private float cameraSize;
     private Vector3 cameraPos;
@@ -25,33 +27,14 @@ public class MainMenu : MonoBehaviour {
         playerFollower = Camera.main.GetComponent<PlayerFollower>();
         pauseMenue = GetComponent<PauseMenuScript>();
         playerSelectionMenu = GetComponent<PlayerSelectionMenuScript>();
+        musicComponent = GetComponent<MusicComponent>();
 	}
-
-    void OnGUI()
-    {
-        if (!playerSelectionMenu.enabled && !inGame)
-        {
-            GUI.skin = playerManager.skin;
-
-            GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 30), "<size=30><color=black>PROJECTFOOTSTOOL</color></size><size=15><color=black> v " + versionNumber + "</color></size>");
-            GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 30), "<size=30>PROJECT<color=yellow>FOOT</color>STOOL</size><size=15><color=yellow> v " + versionNumber + "</color></size>");
-
-            GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 52, 500, 50), "<size=15><color=black>PRESS START (SPACE)</color></size>");
-            GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2 + 50, 500, 50), "<size=15><color=white>PRESS START (SPACE)</color></size>");
-        }
-    }
-
+    
 	// Update is called once per frame
 	void Update () 
     {
         if (!inGame)
         {
-            if (Input.GetButtonDown("Submit"))
-            {
-                if (!playerSelectionMenu.enabled)
-                    displayPlayerMenu();
-            }
-
             float zoomSpeed = playerFollower.zoomSpeed;
 
             Camera.main.orthographicSize = Mathf.Lerp(Camera.main.orthographicSize, cameraSize, zoomSpeed * Time.deltaTime);
@@ -61,8 +44,18 @@ public class MainMenu : MonoBehaviour {
 
     private void displayPlayerMenu()
     {
-        playerSelectionMenu.enabled = true;
-        playerSelectionMenu.setScript(true);
+        if (!playerSelectionMenu.enabled)
+        {
+            playerSelectionMenu.enabled = true;
+            playerSelectionMenu.setScript(true);
+
+            if (playPlayerMusic)
+            {
+                //play playermenu music
+                musicComponent.setMusic(MusicTrack.PlayerSelectionMenu);
+                musicComponent.playMusic();
+            }
+        }
     }
     
     public void startGame()
@@ -71,9 +64,16 @@ public class MainMenu : MonoBehaviour {
         playerManager.enabled = true;
         playerFollower.enabled = true;
         
-        //game mode clicking here
+        //game mode checking here
         GameMode gameMode = playerSelectionMenu.GetGameMode();
         int scoreCount = playerSelectionMenu.getStockCount();
+
+        if (playGameMusic)
+        {
+            //play gamemode music
+            musicComponent.setMusic(gameMode);
+            musicComponent.playMusic();
+        }
 
         levelManager.setLevel(gameMode);
 
@@ -88,14 +88,33 @@ public class MainMenu : MonoBehaviour {
         pauseMenue.enabled = true;
     }
 
-    public void resetGame()
+    public void exitLevel()
     {
         inGame = false;
         playerManager.enabled = false;
         playerFollower.enabled = false;
         pauseMenue.enabled = false;
 
-        playerSelectionMenu.enabled = true;
-        playerSelectionMenu.setScript(true);
+        displayPlayerMenu();
+        levelManager.resetLevels();
+    }
+
+    public void setGameMode(GameMode gameMode)
+    {
+        //starts up a player menu, with the given game mode
+        displayPlayerMenu();
+        playerSelectionMenu.setGameMode(gameMode);
+    }
+
+    public void hidePlayerMenu()
+    {
+        //used just to inform us of a quit
+
+        if (playPlayerMusic)
+        {         
+            //play menu music
+            musicComponent.setMusic(MusicTrack.MainMenu);
+            musicComponent.playMusic();
+        }
     }
 }

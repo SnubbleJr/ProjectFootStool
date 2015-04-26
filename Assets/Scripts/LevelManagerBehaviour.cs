@@ -11,6 +11,12 @@ public class LevelManagerBehaviour : MonoBehaviour {
 	void Start ()
     {
         levels = GameObject.FindGameObjectsWithTag("Level");
+
+        //disable all
+        foreach (GameObject level in levels)
+        {
+            level.SendMessage("setLevel", false);
+        }
 	}
 	
     public void setLevel(GameMode gameMode)
@@ -18,9 +24,15 @@ public class LevelManagerBehaviour : MonoBehaviour {
         foreach(GameObject level in levels)
         {
             if (System.Enum.GetName(typeof(GameMode), gameMode) == level.name)
-                level.SetActive(true);
+                level.SendMessage("setLevel", true);
             else
-                level.SetActive(false);
+                level.SendMessage("setLevel", false);
         }
+    }
+
+    public void resetLevels()
+    {   
+        foreach (GameObject level in levels)
+            level.SendMessage("setLevel", false);
     }
 }

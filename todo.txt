@@ -1,0 +1,32 @@
+Design visuals round music
+	Ask Alex what themes he used, what influenced it, what feel he thinks it is
+		also ask if i can get beat info avaible in the file
+
+make a propper menu and post match screen now
+
+with the music, make it look more jazzy, hotline miami-y?
+maybe glow shaders or changing background colour, more wire frames and neony?
+	80's inside of a computer, like the new feed dump/blood dragon/tron looks
+	feel like fighting inside of a computer
+
+main menu has a scrolling background of circuits, hovering over an option changes the direction
+		(bit like virus named tom?)
+	start from the standard flag, when start is pressed, tilt the camera and start moving the background
+		make a script that generates background tiles that is never ending
+			when a game starts, build out the tiles into a square, and stop the movement
+
+	will have to implement a propper menu system, see if i can use 1080's?
+		will have to make a handeler who who has control
+	background pulse with beat
+
+screen shake on kill?
+
+swinky swanky swaggy neon jazz
+
+look into:
+starwhales
+virus named tom
+
+team mode?
+
+want the menu music to be called suites and sunglasses

@@ -105,12 +105,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         playerSelecterScript.setPlayer(playerNo);
         playerSelecters.Add(playerSelecterScript);
     }
-
-	// Update is called once per frame
-	void Update () {
-	
-	}
-    
+        
     public Player[] getPlayers()
     {
         //returns an array of all the players active for a game

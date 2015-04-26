@@ -58,10 +58,14 @@ public class PauseMenuScript : MonoBehaviour {
             if (Input.GetButtonDown("Cancel"))
                 displayMenu = false;
 
-            if (Input.GetButtonDown("Submit"))
+            if (Input.GetButtonDown("EndGame"))
             {
 #if UNITY_EDITOR || UNITY_WEBPLAYER
                 //return to main menu
+
+                //unpause
+                if (Time.timeScale <= 0)
+                    Time.timeScale = previousTimeScale;
                 Application.LoadLevel(0);  
 #else
                 Application.Quit();
@@ -69,6 +73,9 @@ public class PauseMenuScript : MonoBehaviour {
             }
             if (Input.GetButtonDown("SwitchMode"))
             {
+                //unpause
+                if (Time.timeScale <= 0)
+                    Time.timeScale = previousTimeScale;
                 quitMatch = true;
                 displayMenu = false;
             }

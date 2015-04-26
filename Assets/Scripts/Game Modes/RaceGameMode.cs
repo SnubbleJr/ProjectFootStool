@@ -20,16 +20,24 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
     private int platChunckAmount = 15;
     private int currentChunkCount = 0;
 
-    // Use this for initialization
-    void Start()
+    void Awake()
     {
+
         playerManager = GetComponent<PlayerManagerBehaviour>();
         levelMover = GameObject.Find("Level Mover").GetComponent<LevelMoverScript>();
         terrainGenerator = GameObject.Find("Terrain Generator").GetComponent<TerrainGeneratorBehaviour>();
+    }
 
+    void Start()
+    {
         levelMover.enabled = true;
         terrainGenerator.enabled = true;
 
+        restartRound();
+    }
+
+    void OnEnable()
+    {
         restartRound();
     }
 
@@ -64,7 +72,6 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
         //check if we need more platforms
         if (levelMover.transform.position.y > (terrainGenerator.transform.position.y + currentChunkCount - 6))
         {
-            print("moar");
             terrainGenerator.spawnPlatforms(currentChunkCount + 1, platChunckAmount);
             currentChunkCount += platChunckAmount;
         }

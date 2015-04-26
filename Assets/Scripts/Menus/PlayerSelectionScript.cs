@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 //spawns all the x and y tiles for this slector
 //talks to player selection script amamanger
@@ -11,6 +12,13 @@ public class PlayerSelectionScript : MonoBehaviour {
     public AudioClip colorSound;
     public AudioClip spriteSound;
     public AudioClip selectionSound;
+
+    public bool menuRollOver = true;
+    public int scrollSpeedMin = 60, scrollSpeedMax = 15; //the number of frames between selecting
+
+    private int currentScrollSpeedMinH = 0, currentScrollSpeedMinV = 0; //slowly increased while a direction is being pushed
+    private int currentScrollSpeedH = 0, currentScrollSpeedV = 0; //adds 1 every frame that an input is held
+    private bool canScrollH = false, canScrollV = false; //bool used to inhibit sanic levels of scrolling
 
     private List<PlayerSelectionTileBehaviour> spriteTiles = new List<PlayerSelectionTileBehaviour>();
     private List<PlayerSelectionTileBehaviour> colorTiles = new List<PlayerSelectionTileBehaviour>();
@@ -49,6 +57,8 @@ public class PlayerSelectionScript : MonoBehaviour {
 
     private AudioSource audio;
 
+    private GameObject canvas;
+
 	// Use this for initialization
 	void Start ()
     {
@@ -81,6 +91,8 @@ public class PlayerSelectionScript : MonoBehaviour {
         }
 
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+        canvas = GetComponentInChildren<Canvas>().gameObject;
 
         //grab the data from the manger
         playerSprites = manager.playerSprites;
@@ -122,38 +134,34 @@ public class PlayerSelectionScript : MonoBehaviour {
         //shift wheel by player no so we don't get everyone on the same thing
         for (int i = 0; i < playerNo; i++)
         {
-            moveColorWheel(1);
-            moveSpriteWheel(1);
+            moveColorWheel(1, false);
+            moveSpriteWheel(1, false);
         }
 
         //disable our selfs, and then wait for input
         setActive(false);
+
+        currentScrollSpeedMinH = scrollSpeedMin;
+        currentScrollSpeedMinV = scrollSpeedMin;
 	}
     	
-    void OnGUI()
-    {
-        GUI.skin = playerManager.skin;
-
-        Vector3 screenPoint = camera.WorldToScreenPoint(transform.position);
-
-        int height = camera.pixelHeight;
-
-        if (!active && !greyedOut)
-        {            
-            GUI.Label(new Rect(screenPoint.x -98, height - screenPoint.y -52, 300, 70), "<size=25><color=black> Player " + playerNo + "\nPress some buttons</color></size>");
-            GUI.Label(new Rect(screenPoint.x -100, height - screenPoint.y -50, 300, 70), "<size=25><color=yellow> Player " + playerNo + "\nPress some buttons</color></size>");
-        }
-
-        if (active && ready)
-        {
-            GUI.Label(new Rect(screenPoint.x -149, height - screenPoint.y + 27, 300, 30), "<size=30><color=black>READY!</color></size>");
-            GUI.Label(new Rect(screenPoint.x -150, height - screenPoint.y + 25, 300, 30), "<size=30><color=yellow>READY!</color></size>");
-        }
-    }
-
 	// Update is called once per frame
 	void Update ()
     {
+        if (!active && !greyedOut)
+        {
+            canvas.SetActive(true);
+            canvas.SendMessage("enterText", "<size=25><color=yellow> Player " + playerNo + "\nPress some buttons</color></size>");
+        }
+        else
+            canvas.SetActive(false);
+
+        if (active && ready)
+        {
+            canvas.SetActive(true);
+            canvas.SendMessage("enterText", "<size=50><color=yellow>\r\n\r\nREADY!</color></size>");
+        }
+
         //check if particvle system is playing and play if we need it to
         if (ready && !particleSystem.isPlaying)
             particleSystem.Play();
@@ -184,53 +192,114 @@ public class PlayerSelectionScript : MonoBehaviour {
     {
         if (!ready && active)
         {
-            float v = Input.GetAxisRaw(verticallAxis);
+            axisSelection(horizontalAxis, true);
+            axisSelection(verticallAxis, true);
+        }
+    }
 
-            if (v < 0)
+    private void axisSelection(string navigateAxis, bool playSound)
+    {
+        //handles the option rollover selection
+        float input;
+
+        try
+        {
+            //on input, change posistion  of selected and inform activeMenuEntries
+            input = -Input.GetAxisRaw(navigateAxis);
+        }
+        catch
+        {
+            Debug.LogError("No axis set!");
+            input = 0;
+        }
+
+        if (navigateAxis.Contains("zontal"))
+        {
+            //if we can scroll
+            if (canScrollH)
             {
-                if (!hitUp)
-                {
-                    hitUp = true;
-                    moveColorWheel(1);
-                }
-            }
-            else
-                hitUp = false;
+                //parse userinput
+                moveSpriteWheel((int)input, playSound);
 
-            if (v > 0)
+                //stop scrolling
+                canScrollH = false;
+
+                //while we're scrolling
+                //decrease current min by 10%, unitil it's at max
+                //this give the overall effect of increasing how frequently canScroll is activated - it speeds up slow at first, then faster
+                //done within can scroll so that the whole process is exponential in a way
+
+                if (currentScrollSpeedMinH >= scrollSpeedMax)
+                    currentScrollSpeedMinH = (int)(currentScrollSpeedMinH * 0.9);
+            }
+
+            if (input == 0)
             {
-                if (!hitDown)
-                {
-                    hitDown = true;
-                    moveColorWheel(-1);
-                }
+                //nothing pressed
+
+                //set scroll speed back to min
+                currentScrollSpeedH = scrollSpeedMin;
+
+                //set current scroll min to min
+                currentScrollSpeedMinH = scrollSpeedMin;
             }
-            else
-                hitDown = false;
 
-            float h = Input.GetAxisRaw(horizontalAxis);
+            //increas current Scroll Speed by 1
 
-            if (h < 0)
+            //speed checking, if the current speed is over the current min, then set scrollable to true and reset current speed
+            //this means that we can move manually as fast as we want
+
+            currentScrollSpeedH++;
+
+            if (currentScrollSpeedH > currentScrollSpeedMinH)
             {
-                if (!hitLeft)
-                {
-                    hitLeft = true;
-                    moveSpriteWheel(1);
-                }
+                canScrollH = true;
+                currentScrollSpeedH = 0;
             }
-            else
-                hitLeft = false;
-
-            if (h > 0)
+        }
+        else
+        {
+            //if we can scroll
+            if (canScrollV)
             {
-                if (!hitRight)
-                {
-                    hitRight = true;
-                    moveSpriteWheel(-1);
-                }
+                //parse userinput
+                moveColorWheel((int)input, playSound);
+
+                //stop scrolling
+                canScrollV = false;
+
+                //while we're scrolling
+                //decrease current min by 10%, unitil it's at max
+                //this give the overall effect of increasing how frequently canScroll is activated - it speeds up slow at first, then faster
+                //done within can scroll so that the whole process is exponential in a way
+
+                if (currentScrollSpeedMinV >= scrollSpeedMax)
+                    currentScrollSpeedMinV = (int)(currentScrollSpeedMinV * 0.9);
             }
-            else
-                hitRight = false;
+
+            if (input == 0)
+            {
+                //nothing pressed
+
+                //set scroll speed back to min
+                currentScrollSpeedV = scrollSpeedMin;
+
+                //set current scroll min to min
+                currentScrollSpeedMinV = scrollSpeedMin;
+            }
+
+            //increas current Scroll Speed by 1
+
+            //speed checking, if the current speed is over the current min, then set scrollable to true and reset current speed
+            //this means that we can move manually as fast as we want
+
+            currentScrollSpeedV++;
+
+            if (currentScrollSpeedV > currentScrollSpeedMinV)
+            {
+                canScrollV = true;
+                currentScrollSpeedV = 0;
+            }
         }
     }
 
@@ -289,7 +358,7 @@ public class PlayerSelectionScript : MonoBehaviour {
         particleSystem.Play();
 
         //plays sound
-        audio.PlayOneShot(selectionSound, 1f);
+        audio.PlayOneShot(selectionSound, 1f * SFXVolumeSliderElement.volume);
     }
 
     private void unready()
@@ -312,7 +381,7 @@ public class PlayerSelectionScript : MonoBehaviour {
         transform.localRotation = Quaternion.Euler(25f * v, 25f * h, 0);
     }
 
-    private void moveColorWheel(int direction)
+    private void moveColorWheel(int direction, bool sound)
     {
         //unset old selected
         colorTiles[currentColor].getColor().setAvailable(true);
@@ -322,20 +391,21 @@ public class PlayerSelectionScript : MonoBehaviour {
             moveColorWheelUp();
             //if this spreit is already picked, then go again
             if (!colorTiles[currentColor].getColor().getAvailable())
-                moveColorWheel(1);
+                moveColorWheel(1, false);
         }
-        else
+        else if (direction < 0)
         {
             moveColorWheelDown();
             if (!colorTiles[currentColor].getColor().getAvailable())
-                moveColorWheel(-1);
+                moveColorWheel(-1, false);
         }
 
         //play sound
-        audio.PlayOneShot(colorSound, 0.3f);
+        if (direction != 0 && sound)
+            audio.PlayOneShot(colorSound, 0.3f * SFXVolumeSliderElement.volume);
     }
 
-    private void moveSpriteWheel(int direction)
+    private void moveSpriteWheel(int direction, bool sound)
     {
         //unset old selected
         spriteTiles[currentSprite].getSprite().setAvailable(true);
@@ -351,17 +421,18 @@ public class PlayerSelectionScript : MonoBehaviour {
             moveSpriteWheelLeft();
             //if this spreit is already picked, then go again
             if (!spriteTiles[currentSprite].getSprite().getAvailable())
-                moveSpriteWheel(1);
+                moveSpriteWheel(1, false);
         }
-        else
+        else if (direction < 0)
         {
             moveSpriteWheelRight();
             if (!spriteTiles[currentSprite].getSprite().getAvailable())
-                moveSpriteWheel(-1);
+                moveSpriteWheel(-1, false);
         }
 
         //play sound
-        audio.PlayOneShot(spriteSound, 0.3f);
+        if (direction != 0 && sound)
+            audio.PlayOneShot(spriteSound, 0.3f * SFXVolumeSliderElement.volume);
     }
 
     private void moveColorWheelUp()

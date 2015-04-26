@@ -41,6 +41,16 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update () 
     {
+        //quit out if no one is in selecter
+	    if (Input.GetButtonDown("Cancel") && getPlayers().Length == 0)
+        {
+            playerSelectionManager.SetActive(false);
+            this.enabled = false;
+
+            //tell main menu that we've quit
+            mainMenu.hidePlayerMenu();
+        }
+
         allReady = checkReady();
 
         if (Input.GetButtonDown("StartGame") && allReady)
@@ -85,5 +95,10 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         if (gameModeSelecterManager == null)
             gameModeSelecterManager = playerSelectionManager.GetComponent<GameModeSelectionScriptManager>();
         gameModeSelecterManager.setScript(value);
+    }
+
+    public void setGameMode(GameMode gameMode)
+    {
+        gameModeSelecterManager.setGameMode(gameMode);
     }
 }
