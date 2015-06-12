@@ -361,7 +361,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         foreach (GameObject obj in fadingColorObjects)
         {
-            obj.SendMessage("setFade", false);
+            obj.SendMessage("setFade", false, SendMessageOptions.DontRequireReceiver);
         }
 
         GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
