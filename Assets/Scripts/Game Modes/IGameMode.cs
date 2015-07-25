@@ -21,6 +21,6 @@ public interface IGameMode
     void setColors(PlayerColor[] col);
 
     void setScore(int score);
-
+    
     void restartRound();
 }
