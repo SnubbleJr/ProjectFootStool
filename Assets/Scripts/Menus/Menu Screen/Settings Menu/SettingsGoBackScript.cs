@@ -1,15 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(MenuEntry))]
+
 public class SettingsGoBackScript : MonoBehaviour {
 
     public GameObject settingsMenu;
+
+    private MenuEntry menuEntry;
 
     //simple script that just asks for the users go head, then closes the menu
 
     void OnEnable()
     {
         InputManagerBehaviour.buttonPressed += buttonDetected;
+        menuEntry = GetComponent<MenuEntry>();
     }
 
     void OnDisable()
@@ -21,13 +26,22 @@ public class SettingsGoBackScript : MonoBehaviour {
     {
         //quit out if no one is in selecter
         if (inputName == "Cancel")
-            SendMessage("goTime");
+            if (menuEntry)
+            {
+                if (!menuEntry.getGreyedOut())
+                    SendMessage("goTime");
+            }
+            else
+                SendMessage("goTime");
     }
 
     //when the gameobject this is attached to is activated, we do this 
     public void goTime()
     {
-        if (settingsMenu != null)
+        if (settingsMenu)
+        {
+            settingsMenu.GetComponent<MenuScript>().entryFinished();
             settingsMenu.SetActive(false);
+        }
     }
 }

@@ -100,9 +100,19 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         return gameModeSelecterManager.GetGameMode();
     }
 
+    public void setGameMode(GameMode gameMode)
+    {
+        gameModeSelecterManager.setGameMode(gameMode);
+    }
+
     public bool getTeamMode()
     {
         return playerSelecterManager.getTeamMode();
+    }
+
+    public void setTeamMode(bool mode)
+    {
+        gameModeSelecterManager.setTeamMode(mode);
     }
 
     public int getStockCount()
@@ -113,6 +123,21 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         return gameModeSelecterManager.getStockCount();
     }
 
+    public void setStockCount(int count)
+    {
+        gameModeSelecterManager.setStockCount(count);
+    }
+
+    public PlayerSelectionScript[] getPlayers()
+    {
+        return playerSelecterManager.getPlayers();
+    }
+
+    public void setPlayers()
+    {
+        playerSelecterManager.setPlayers();
+    }
+
     public void setScript(bool value)
     {
         playerSelectionManager.SetActive(true);
@@ -120,14 +145,10 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         if (playerSelecterManager == null)
             playerSelecterManager = playerSelectionManager.GetComponent<PlayerSelectionScriptManager>();
         playerSelecterManager.setScript(value);
+        playerSelecterManager.enabled = value;
 
         if (gameModeSelecterManager == null)
             gameModeSelecterManager = playerSelectionManager.GetComponent<GameModeSelectionScriptManager>();
         gameModeSelecterManager.setScript(value);
-    }
-
-    public void setGameMode(GameMode gameMode)
-    {
-        gameModeSelecterManager.setGameMode(gameMode);
     }
 }

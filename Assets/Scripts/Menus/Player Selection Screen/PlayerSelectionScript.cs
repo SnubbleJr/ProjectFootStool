@@ -9,14 +9,14 @@ using System;
 public class PlayerSelectionScript : MonoBehaviour {
 
     public GameObject backgroundSprite;
-    public GameObject mainText;
-    public GameObject teamText;
+    public UITextScript mainText;
+    public UITextScript teamText;
     public GameObject controlsCanvas;
 
     public GameObject playerSelecterTile;
-    public AudioClip colorSound;
-    public AudioClip spriteSound;
-    public AudioClip selectionSound;
+    public SFX colorSound;
+    public SFX spriteSound;
+    public SFX selectionSound;
 
     public bool menuRollOver = true;
     public int scrollSpeedMin = 60, scrollSpeedMax = 15; //the number of frames between selecting
@@ -54,14 +54,10 @@ public class PlayerSelectionScript : MonoBehaviour {
 
     private SpriteRenderer spriteRenderer;
 
-    private AudioSource audio;
-    
 	// Use this for initialization
 	void Start ()
     {
         particleSystem = GetComponent<ParticleSystem>();
-
-        audio = GetComponent<AudioSource>();
 
         playerManager = GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>();
 
@@ -213,11 +209,11 @@ public class PlayerSelectionScript : MonoBehaviour {
                     rotateWindow();
                     break;
                 case "Horizontal":
-                    if (!ready)
+                    if (!ready && !greyedOut)
                         axisSelection(inputName, value, true);
                     break;
                 case "Vertical":
-                    if (!ready)
+                    if (!ready && !greyedOut)
                         axisSelection(inputName, value, true);
                     break;
             }
@@ -231,20 +227,14 @@ public class PlayerSelectionScript : MonoBehaviour {
             grabAndBuildTiles();
 
         if (!active && !greyedOut)
-        {
-            mainText.SetActive(true);
-            mainText.SendMessage("enterText", "<size=25><color=yellow> Player " + playerNo + "\nPress some buttons</color></size>");
-        }
+            mainText.setText("<size=25><color=yellow> Player " + playerNo + "\nPress some buttons</color></size>");
         else
-            mainText.SetActive(false);
+            mainText.setText("");
 
         rotateWindow();
 
         if (active && ready)
-        {
-            mainText.SetActive(true);
-            mainText.SendMessage("enterText", "<size=50><color=yellow>\r\n\r\nREADY!</color></size>");
-        }
+            mainText.setText("<size=50><color=yellow>\r\n\r\nREADY!</color></size>");
 
         //check if particvle system is playing and play if we need it to
         if (ready && !particleSystem.isPlaying)
@@ -391,7 +381,7 @@ public class PlayerSelectionScript : MonoBehaviour {
         particleSystem.Play();
 
         //plays sound
-        audio.PlayOneShot(selectionSound, 1f * SFXVolumeSliderElement.volume);
+        SFXManagerBehaviour.Instance.playSound(selectionSound);
     }
 
     private void unready()
@@ -408,7 +398,6 @@ public class PlayerSelectionScript : MonoBehaviour {
     private void rotateWindow()
     {
         //takes in the right ananloge stick on the controller and rotates it just like in meele
-
         transform.localRotation = Quaternion.Euler(25f * wiggleV, 25f * wiggleH, 0);
     }
 
@@ -433,7 +422,7 @@ public class PlayerSelectionScript : MonoBehaviour {
 
         //play sound
         if (direction != 0 && sound)
-            audio.PlayOneShot(colorSound, 0.3f * SFXVolumeSliderElement.volume);
+            SFXManagerBehaviour.Instance.playSound(colorSound);
 
         updateTeam();
     }
@@ -465,7 +454,7 @@ public class PlayerSelectionScript : MonoBehaviour {
 
         //play sound
         if (direction != 0 && sound)
-            audio.PlayOneShot(spriteSound, 0.3f * SFXVolumeSliderElement.volume);
+            SFXManagerBehaviour.Instance.playSound(spriteSound);
     }
 
     private void moveColorWheelUp()
@@ -535,12 +524,12 @@ public class PlayerSelectionScript : MonoBehaviour {
         if (team)
         {
             teamNo = (int)(currentColor / 19) + 1;
-            teamText.SendMessage("enterText", "<size=25><color=#" + playerColors[currentColor].color.GetHashCode() + "> Team " + teamNo + "</color></size>");
+            teamText.setText("<size=25><color=#" + playerColors[currentColor].color.GetHashCode() + "> Team " + teamNo + "</color></size>");
         }
         else
         {
             teamNo = playerNo;
-            teamText.SendMessage("enterText", "");
+            teamText.setText("");
         }
     }
 
@@ -647,6 +636,11 @@ public class PlayerSelectionScript : MonoBehaviour {
         return colorTiles[currentColor].getColor();
     }
 
+    public bool getActive()
+    {
+        return active;
+    }
+
     public void setActive(bool value)
     {
         if (spriteTiles == null || colorTiles == null)
@@ -668,14 +662,16 @@ public class PlayerSelectionScript : MonoBehaviour {
         spriteRenderer.enabled = value;
     }
 
-    public bool getActive()
-    {
-        return active;
-    }
-
     public bool getReady()
     {
         return ready;
+    }
+
+    public void setReady(bool val)
+    {
+        ready = val;
+        if (ready)
+            readyUp();
     }
 
     public void setGrey(bool value)

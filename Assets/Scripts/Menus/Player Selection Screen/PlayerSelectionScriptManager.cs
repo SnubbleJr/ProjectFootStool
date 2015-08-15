@@ -276,7 +276,11 @@ public class PlayerSelectionScriptManager : MonoBehaviour
                         
         //if controller full, we add a join instruction for the other side to dictionary
         if (playerInputScheme.inputType == InputType.ControllerFull)
-            joinCanvases.Add(playerSelecterScript, Instantiate(pressToJoinCanvas, transform.position, Quaternion.identity) as GameObject);
+        {
+            GameObject joinCanvas = Instantiate(pressToJoinCanvas, transform.position, Quaternion.identity) as GameObject;
+            joinCanvas.transform.SetParent(transform, false);
+            joinCanvases.Add(playerSelecterScript, joinCanvas);
+        }
 
         updatePlayerNos();
 
@@ -321,7 +325,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
 
     public Player[] getReadyPlayers()
     {
-        //returns an array of all the players active for a game
+        //returns an array of all the players active and ready for a game
 
         //returns an array of all the players for a round
         List<Player> players = new List<Player>();
@@ -348,7 +352,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
 
     public Player[] getActivePlayers()
     {
-        //returns an array of all the players active for a game
+        //returns an array of all the players active
 
         //returns an array of all the players for a round
         List<Player> players = new List<Player>();
@@ -370,6 +374,27 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         }
 
         return players.ToArray();
+    }
+
+    public PlayerSelectionScript[] getPlayers()
+    {
+        //debug, but jsut returns players we have created
+        List<PlayerSelectionScript> players = new List<PlayerSelectionScript>();
+
+        foreach (KeyValuePair<int, PlayerSelectionScript> pair in playerSelecters)
+           players.Add(pair.Value);
+        return players.ToArray();
+    }
+
+    public void setPlayers()
+    {
+        //debug overload that ready's everyone up
+        foreach (KeyValuePair<int, PlayerSelectionScript> pair in playerSelecters)
+        {
+            PlayerSelectionScript playerSelectionScript = pair.Value;
+            playerSelectionScript.setActive(true);
+            playerSelectionScript.setReady(true);
+        }
     }
 
     public void setScript(bool value)

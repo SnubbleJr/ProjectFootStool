@@ -30,6 +30,9 @@ public class PlayerFollower : MonoBehaviour {
 
     private Camera camera;
 
+    //move camera to the midle of both players
+    private Vector3 midPoint = Vector3.zero;
+    
 	// Use this for initialization
 	void Awake ()
     {
@@ -55,7 +58,7 @@ public class PlayerFollower : MonoBehaviour {
 
         float cameraSize = camera.orthographicSize;
 
-        //if player has one, then zoom in on them
+        //if player has won, then zoom in on them
         if (overide)
         {
             float speed = 2;
@@ -64,7 +67,7 @@ public class PlayerFollower : MonoBehaviour {
 
             Vector3 newPos = overide.position;
             newPos.z = transform.position.z;
-
+            
             transform.position = Vector3.Slerp(transform.position, newPos, speed * zoomSpeed * Time.deltaTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(overide.position), 0.25f * Time.deltaTime);
 
@@ -93,11 +96,10 @@ public class PlayerFollower : MonoBehaviour {
             //if in min, then zoom in
             if (inMin && cameraSize > minSize)
                 camera.orthographicSize = Mathf.Lerp(cameraSize, cameraSize - 1, zoomSpeed * Time.deltaTime);
-
-            //move camera to the midle of both players
-            Vector3 midPoint = Vector3.zero;
-
+            
             int numActivePlayers = 0;
+
+            midPoint = Vector3.zero;
 
             foreach (GameObject player in players)
             {
@@ -182,5 +184,10 @@ public class PlayerFollower : MonoBehaviour {
     public void setDebug(bool value)
     {
         debug = value;
+    }
+
+    public Vector3 getMidPoint()
+    {
+        return midPoint;
     }
 }

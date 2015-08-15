@@ -7,6 +7,6 @@ public class KillBoxBehaviour : MonoBehaviour {
     {
         //kill any player that comes here
         if (other.CompareTag("Player"))
-            other.SendMessage("setHit");
+            other.SendMessage("setHit", true);
     }
 }

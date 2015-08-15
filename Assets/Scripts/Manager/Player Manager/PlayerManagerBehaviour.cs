@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 
 //spawns players and manages them
-
 public class PlayerManagerBehaviour : MonoBehaviour {
 
     public bool debug;
@@ -11,10 +10,14 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     public int firstTo = 5;
     public GUISkin skin;
 
+    public SFX countDownSound = SFX.Countdown;
+    public SFX countDownGoSound = SFX.Go;
+
     private GameObject[] spawnPointHolders; //holds the different points for players
     private Transform[] spawns;
 
     private GameObject[] players;
+    private PlayerStats[] playerStats;
 
     private PlayerControl[] playerControls;
 
@@ -31,11 +34,13 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     private StockGameMode stockGame;
     private KOTHGameMode kothGame;
     private RaceGameMode raceGame;
+    private PlayerStatsManagerBehaviour playerStatsManager;
 
     private int winner;
     private bool gameOver;
+    private bool displayWinner = false;
     private int countDownStart = 5;
-    private int countDown;
+    private int countDownTime;
     
 	// Use this for initialization
     void Awake()
@@ -49,8 +54,21 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         stockGame = GetComponent<StockGameMode>();
         kothGame = GetComponent<KOTHGameMode>();
         raceGame = GetComponent<RaceGameMode>();
+        playerStatsManager = GetComponent<PlayerStatsManagerBehaviour>();
     }
-    
+
+    void OnEnable()
+    {
+        InputManagerBehaviour.playerAdded += playerAdded;
+        InputManagerBehaviour.playerRemoved += playerRemoved;
+    }
+
+    void OnDisable()
+    {
+        InputManagerBehaviour.playerAdded -= playerAdded;
+        InputManagerBehaviour.playerRemoved -= playerRemoved;
+    }
+
     public void startGame(Player[] Players, GameMode mode, bool teamMode, int scoreAmount)
     {
         spawnPointHolders = GameObject.FindGameObjectsWithTag("SpawnPoints");
@@ -70,10 +88,17 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         //set players and spawn them
         players = new GameObject[Players.Length];
+        playerStats = new PlayerStats[Players.Length];
         spawns = selectSpawns(Players.Length);        
         //we have to invert the spawn locations, as they go backwards
         for (int i = 0; i < players.Length; i++)
+        {
             players[i] = Instantiate(playerPrefab, spawns[i].position, Quaternion.identity) as GameObject;
+            PlayerStats stat = new PlayerStats();
+            stat.id = Players[i].playerNo;
+            stat.connected = true;
+            playerStats[i] = stat;
+        }
         
         initialseCameras();
 
@@ -81,9 +106,9 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         //reseting values
         Time.timeScale = 1;
-        countDown = countDownStart;
-        CancelInvoke("countdown");
-        InvokeRepeating("countdown", 0, 1f);
+        countDownTime = countDownStart;
+        CancelInvoke("countDown");
+        InvokeRepeating("countDown", 0, Time.timeScale/2f);
         foreach (GameObject obj in changingColorObjects)
             obj.SendMessage("startFade");
 
@@ -92,7 +117,25 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
         setGameMode(mode, scoreAmount);
     }
-    
+
+    private void playerAdded(PlayerInputScheme scheme)
+    {
+        if (playerStats != null)
+            //auto ready on removal of player
+            foreach (PlayerStats playerStat in playerStats)
+                if (playerStat.id == scheme.id)
+                    playerStat.connected = true;
+    }
+
+    private void playerRemoved(PlayerInputScheme scheme)
+    {
+        if (playerStats != null)
+            //auto ready on removal of player
+            foreach (PlayerStats playerStat in playerStats)
+                if (playerStat.id == scheme.id)
+                    playerStat.connected = false;
+    }
+
     private PlayerColor[] getPlayerColors(Player[] players)
     {
         //extracts an array of PlayerColors from players
@@ -190,21 +233,26 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         gameMode.setColors(playerColors);
     }
 
-    private void countdown()
+    private void countDown()
     {
         //countdown to 0
-        if (countDown > 0)
-            countDown--;
+        if (countDownTime > 0)
+        {
+            SFXManagerBehaviour.Instance.playSound(countDownSound);
+            countDownTime--;
+        }
         else
         {
             //wehen hit 0, set to -1 so go on screen disapears
-            countDown = -1;
+            countDownTime = -1;
             CancelInvoke("countdown");
         }
 
         //checked at 0, so players are active on go
-        if (countDown == 0)
+        if (countDownTime == 0)
         {
+            SFXManagerBehaviour.Instance.playSound(countDownGoSound);
+
             mainCamera.startedGame = true;
 
             foreach (PlayerControl playerControl in playerControls)
@@ -219,29 +267,37 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     {
         GUI.skin = skin;
 
-        if (countDown > 0)
+        if (countDownTime > 0)
         {
-            GUI.Label(new Rect((Screen.width / 2) - 23, Screen.height / 2 + 2, 50, 30), "<color=black>" + countDown.ToString() + "</color>");
-            GUI.Label(new Rect((Screen.width / 2) - 25, Screen.height / 2, 50, 30), "<color=white>" + countDown.ToString() + "</color>");
+            GUI.Label(new Rect((Screen.width / 2) - 23, Screen.height / 2 + 2, 50, 30), "<color=black>" + countDownTime.ToString() + "</color>");
+            GUI.Label(new Rect((Screen.width / 2) - 25, Screen.height / 2, 50, 30), "<color=white>" + countDownTime.ToString() + "</color>");
         }
 
-        if (countDown == 0)
+        if (countDownTime == 0)
         {
             GUI.Label(new Rect((Screen.width / 2) - 48, Screen.height / 2 + 2, 100, 30), "<color=black>GO!</color>");
             GUI.Label(new Rect((Screen.width / 2) - 50, Screen.height / 2, 100, 30), "<color=yellow>GO!</color>");
         }
                 
-        if (winner != 0)
+        if (gameOver && displayWinner)
         {
-            if (team)
+            if (winner != 0)
             {
-                GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50), "<color=black>Team " + winner + " has won!</color>");
-                GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50), "<color=white>Team " + winner + " has won!</color>");
+                if (team)
+                {
+                    GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50),   "<color=black>Team " + winner + " has won!</color>");
+                    GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50),       "<color=white>Team " + winner + " has won!</color>");
+                }
+                else
+                {
+                    GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50),   "<color=black>Player " + winner + " has won!</color>");
+                    GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50),       "<color=white>Player " + winner + " has won!</color>");
+                }
             }
             else
             {
-                GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50), "<color=black>Player " + winner + " has won!</color>");
-                GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50), "<color=white>Player " + winner + " has won!</color>");
+                GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50),   "<color=black>No contest!</color>");
+                GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50),       "<color=white>No contest!</color>");
             }
         }
     }
@@ -254,15 +310,34 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             winner = gameMode.checkForWinner();
 
             if (winner != 0)
-            {
-                endOfGame();
-                gameOver = true;
-            }
+                endMatch();
         }
     }
 
-    public void playerHit(PlayerControl playerControl)
+    private void logKO(PlayerControl playerControl, int opponent)
     {
+        //add a point to the player that just killed this guy
+
+        //we minus 8 from the killer's layer position to get their id
+        int killer = (int)Mathf.Log(opponent, 2) - 8;
+
+        //log TKO for player, and KO for killer
+        playerStats[findPlayerStat(playerControl.getPlayerNo())].addTKO(killer);
+        playerStats[findPlayerStat(killer)].addKO(playerControl.getPlayerNo());
+    }
+
+    private int findPlayerStat(int id)
+    {
+        for (int i = 0; i < playerStats.Length; i++)
+            if (playerStats[i].id == id)
+                return i;
+        return 0;
+    }
+
+    public void playerHit(PlayerControl playerControl, int opponent)
+    {
+        logKO(playerControl, opponent);
+
         playerControl.enabled = false;
         
         Transform winnerTrans = null;
@@ -339,25 +414,96 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         }
     }
     
-    private void endOfGame()
+    public void StopMatch()
     {
-        //play sounds
-
-        //do normal end game stuff in on winner if it's a koth game
-        if (kothGame.enabled == true)
-        {
-            foreach (GameObject obj in fadingColorObjects)
-                obj.SendMessage("setFade", true);
-
-            Camera.main.gameObject.SendMessage("setFade", true);
-
-            mainCamera.zoomInOnWinner(kothGame.getPlayerTrans());
-        }
-
-        Invoke("endMatch", 0.8f);
+        //public way to call end game, if this has happened, the match has been forfitted
+        winner = 0;
+        endMatch();
     }
 
-    public void endMatch()
+    private void endMatch()
+    {
+        SFXManagerBehaviour.Instance.stopAllLoops();
+
+        //disable countdown incase it was still showing
+        countDownTime = -1;
+        countDown();
+
+        gameOver = true;
+
+        //set all gamemodes to false
+        stockGame.enabled = false;
+
+        kothGame.deactivateHills();
+        kothGame.enabled = false;
+
+        raceGame.enabled = false;
+
+        playerStatsManager.enabled = false;
+
+        mainCamera.startedGame = false;
+
+        //fancy zoom of last kill
+        //set off the kill cam
+        displayEndGamePanels();
+    }
+
+    private void displayEndGamePanels()
+    {
+        //send off for winner to be displayed, and wait
+        GetComponent<EndGamePanelManager>().displayPanels();
+    }
+
+    public void winnerDisplayed()
+    {
+        //once wwe have gotten the last panel into place, show the winner
+        displayWinner = true;
+
+        //get rid of this zoom in
+
+        //do normal end game stuff in on winner if it's a koth game
+        //if not no contest
+        if (winner != 0)
+        {
+            if (kothGame.enabled == true)
+            {
+                foreach (GameObject obj in fadingColorObjects)
+                    obj.SendMessage("setFade", true);
+
+                Camera.main.gameObject.SendMessage("setFade", true);
+
+                mainCamera.zoomInOnWinner(kothGame.getPlayerTrans());
+            }
+        }
+    }
+
+    public void endGame()
+    {
+        GameObject.Find("Menu Manager").GetComponent<MainMenuScript>().endGame();
+
+        displayWinner = false;
+        
+        //temp measure
+        mainCamera.resetZoom();
+        
+        winner = 0;
+
+        displayResults();
+    }
+
+    private void displayResults()
+    {
+        //send off for results to be displayed, and wait
+        playerStatsManager.enabled = true;
+        playerStatsManager.displayStats(playerStats, playerControls);
+    }
+
+    public void resultsClosed()
+    {
+        finishMatch();
+    }
+
+    private void finishMatch()
     {
         foreach (GameObject player in players)
         {
@@ -376,17 +522,10 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
         foreach (GameObject obj in changingColorObjects)
             obj.SendMessage("setFade", false);
+    }
 
-        //set all gamemodes to false
-        stockGame.enabled = false;
-
-        kothGame.deactivateHills();
-        kothGame.enabled = false;
-
-        raceGame.enabled = false;
-
-        mainCamera.startedGame = false;
-        
-        winner = 0;
+    public PlayerStats[] getStats()
+    {
+        return playerStats;
     }
 }

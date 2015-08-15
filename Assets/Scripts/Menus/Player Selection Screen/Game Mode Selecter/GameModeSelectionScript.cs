@@ -260,6 +260,9 @@ public class GameModeSelectionScript : MonoBehaviour {
                 break;
         }
         gameModeValueOption.setOptionText(optionText);
+
+        //update visuliser to new gamemode
+        GameObject.Find("Music Visualiser").SendMessage("setGameMode", currentGameMode);
     }
 
     private void cancelChanges()
@@ -318,9 +321,19 @@ public class GameModeSelectionScript : MonoBehaviour {
         return stocks;
     }
 
+    public void setStockCount(int count)
+    {
+        stocks = count;
+    }
+
     public bool getTeamMode()
     {
         return teamMode;
+    }
+
+    public void setTeamMode(bool team)
+    {
+        teamMode = team;
     }
 
     public bool getActive()

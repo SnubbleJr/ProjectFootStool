@@ -67,6 +67,9 @@ public class MainMenuScript : MonoBehaviour {
         //game mode checking here
         GameMode gameMode = playerSelectionMenu.GetGameMode();
         int scoreCount = playerSelectionMenu.getStockCount();
+        bool team = playerSelectionMenu.getTeamMode();
+
+        Player[] players = playerSelectionMenu.getReadyPlayers();
 
         if (playGameMusic)
         {
@@ -77,9 +80,6 @@ public class MainMenuScript : MonoBehaviour {
 
         levelManager.setLevel(gameMode);
 
-        Player[] players = playerSelectionMenu.getReadyPlayers();
-        bool team = playerSelectionMenu.getTeamMode();
-
         //disable player menu scipt
         playerSelectionMenu.setScript(false);
         playerSelectionMenu.enabled = false;
@@ -89,12 +89,16 @@ public class MainMenuScript : MonoBehaviour {
         pauseMenue.enabled = true;
     }
 
-    public void exitLevel()
+    public void endGame()
     {
         inGame = false;
-        playerManager.enabled = false;
         playerFollower.enabled = false;
         pauseMenue.enabled = false;
+    }
+
+    public void exitLevel()
+    {
+        playerManager.enabled = false;
 
         displayPlayerMenu();
         levelManager.resetLevels();
@@ -105,6 +109,9 @@ public class MainMenuScript : MonoBehaviour {
         //starts up a player menu, with the given game mode
         displayPlayerMenu();
         playerSelectionMenu.setGameMode(gameMode);
+
+        //update visuliser to new gamemode
+        GameObject.Find("Music Visualiser").SendMessage("setGameMode", gameMode);
     }
 
     public void hidePlayerMenu()

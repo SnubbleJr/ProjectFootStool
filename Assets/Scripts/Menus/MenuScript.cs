@@ -5,9 +5,11 @@ using System.Collections.Generic;
 public class MenuScript : MonoBehaviour {
 
     public string navigateAxis;
-    public AudioClip upSound;
-    public AudioClip downSound;
-    public AudioClip selectSound;
+    public bool invert;
+    public bool allowEntryFocus = false;
+    public SFX upSound = SFX.MenuUp;
+    public SFX downSound = SFX.MenuDown;
+    public SFX selectSound = SFX.Submit;
 
     public bool menuRollOver = true;
     public int scrollSpeedMin = 60, scrollSpeedMax = 15; //the number of frames between selecting
@@ -27,16 +29,9 @@ public class MenuScript : MonoBehaviour {
     private bool ignoreMouseInput = true;
 
 	// Use this for initialization
-	void Start ()
+	void Awake ()
     {
-        List<GameObject> entries = new List<GameObject>();
-        foreach (Transform child in transform)
-        {
-            if (child.CompareTag("MenuEntry"))
-                entries.Add(child.gameObject);
-        }
-
-        menuEntries = entries.ToArray();
+        getMenuEntries();
 
         //if no entries, disable
         if (getActiveGO().Length <= 0)
@@ -52,20 +47,23 @@ public class MenuScript : MonoBehaviour {
         activeMenuEntries = getActiveGO();
 
         //set first entry to be selected
-        activeMenuEntries[selected].SendMessage("setSelected", true, SendMessageOptions.DontRequireReceiver);    
+        activeMenuEntries[selected].SendMessage("setSelected", true);
     }
-	
-    void OnEnable()
+
+    private void getMenuEntries()
     {
-        //set first entry to be selected
-        try
+        List<GameObject> entries = new List<GameObject>();
+        foreach (Transform child in transform)
         {
-            activeMenuEntries[selected].SendMessage("setSelected", true, SendMessageOptions.DontRequireReceiver);    
-        }
-        catch
-        {
+            if (child.CompareTag("MenuEntry"))
+                entries.Add(child.gameObject);
         }
 
+        menuEntries = entries.ToArray();
+    }
+
+    void OnEnable()
+    {
         InputManagerBehaviour.axisPressed += axisDetected;
         InputManagerBehaviour.buttonPressed += buttonDetected;
     }
@@ -73,7 +71,7 @@ public class MenuScript : MonoBehaviour {
     void OnDisable()
     {
         InputManagerBehaviour.axisPressed -= axisDetected;
-        InputManagerBehaviour.buttonPressed -= buttonDetected;        
+        InputManagerBehaviour.buttonPressed -= buttonDetected;
     }
 
     void axisDetected(PlayerInputScheme player, string inputName, float value)
@@ -91,6 +89,9 @@ public class MenuScript : MonoBehaviour {
 
     void buttonDetected(PlayerInputScheme player, string inputName, float value)
     {
+        //tell sliders taht we have started to detect buttons
+        SendMessage("finishedAwake", SendMessageOptions.DontRequireReceiver);
+
         //check for option select - done in here and not in the menu entry for consolidation sake
         //if the option is selected
         if (controllable && inputName == "Submit")
@@ -99,6 +100,9 @@ public class MenuScript : MonoBehaviour {
 
     GameObject[] getActiveGO()
     {
+        if (menuEntries == null)
+            getMenuEntries();
+
         List<GameObject> tmpList = new List<GameObject>();
 
         //go through menu entries, and add the non greyout ones to activeMenuEntries, so disabled options aren't suedo selected
@@ -183,7 +187,28 @@ public class MenuScript : MonoBehaviour {
         {
             playSound(selectSound);
             optionSelected();
+            if (allowEntryFocus)
+                greyOutOtherEntries();
         }
+    }
+
+    public void entryFinished()
+    {
+        if (allowEntryFocus)
+            unGreyOutOtherEntries();
+    }
+
+    private void greyOutOtherEntries()
+    {
+        for (int i = 0; i < activeMenuEntries.Length; i++)
+            if (i != selected)
+                activeMenuEntries[i].GetComponent<MenuEntry>().setGreyedOut(true);
+    }
+
+    private void unGreyOutOtherEntries()
+    {
+        for (int i = 0; i < activeMenuEntries.Length; i++)
+            activeMenuEntries[i].GetComponent<MenuEntry>().setGreyedOut(false);
     }
 
     void setEntrySelect()
@@ -192,8 +217,11 @@ public class MenuScript : MonoBehaviour {
         if (resetSelect != null)
             resetSelect();
 
+        if (activeMenuEntries == null)
+            activeMenuEntries = getActiveGO();
+
         //set new menu entry selected to be highlighted
-        activeMenuEntries[selected].SendMessage("setSelected", true, SendMessageOptions.DontRequireReceiver);        
+        activeMenuEntries[selected].SendMessage("setSelected", true);
     }
 
     void checkUpDownInput(float input)
@@ -238,13 +266,10 @@ public class MenuScript : MonoBehaviour {
         canScroll = false;
     }
 
-    void playSound(AudioClip sound)
+    void playSound(SFX sound)
     {
         //if the clip exists
-        if(sound != null)
-        {
-            AudioSource.PlayClipAtPoint(sound, Camera.main.transform.position, SFXVolumeSliderElement.volume);            
-        }
+        SFXManagerBehaviour.Instance.playSound(sound);
     }
 
     //here, a menu option can overide us
@@ -279,6 +304,13 @@ public class MenuScript : MonoBehaviour {
             selectOption();
     }
 
+    public void setIndex(int index)
+    {
+        //override so we get get a defualt value set to the menu if desired
+        selected = index;
+        setEntrySelect();
+    }
+
     public int getIndex(GameObject entry)
     {
         int index = 0;
@@ -293,6 +325,17 @@ public class MenuScript : MonoBehaviour {
 
     public int getEntryLength()
     {
+        if (menuEntries == null)
+        {
+            List<GameObject> entries = new List<GameObject>();
+            foreach (Transform child in transform)
+            {
+                if (child.CompareTag("MenuEntry"))
+                    entries.Add(child.gameObject);
+            }
+
+            menuEntries = entries.ToArray();
+        }
         return menuEntries.Length;
     }
 
@@ -301,7 +344,17 @@ public class MenuScript : MonoBehaviour {
         return selected;
     }
 
-    public AudioClip getSelectSound()
+    public SFX getMenuUpSound()
+    {
+        return upSound;
+    }
+
+    public SFX getMenuDownSound()
+    {
+        return downSound;
+    }
+
+    public SFX getSelectSound()
     {
         return selectSound;
     }

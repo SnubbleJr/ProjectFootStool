@@ -3,11 +3,31 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class HillTriggerScript : MonoBehaviour {
-    
+
+    public SFX hillEnter = SFX.HillEnter;
+    public SFX hillExit = SFX.HillExit;
+    public SFX hillContested = SFX.HillContested;
+
     //tracks who's currently in the hill, will return who is currently in it on demand
 
     List<GameObject> playersInHill;
-    
+
+    void OnTriggerEnter2D(Collider2D collider)
+    {
+        //play sound, depending if if we are contested
+        if ((getTeamsInHill().Length > 0) || (getPlayersInHill().Length > 0))
+            SFXManagerBehaviour.Instance.playSound(hillContested);
+        else
+            SFXManagerBehaviour.Instance.playSound(hillEnter);
+    }
+
+    void OnTriggerExit2D(Collider2D collider)
+    {
+        SFXManagerBehaviour.Instance.playSound(hillExit);
+
+        playersInHill.Remove(collider.gameObject);
+    }
+
     //add if not already in
     void OnTriggerStay2D(Collider2D other)
     {

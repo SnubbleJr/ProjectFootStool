@@ -96,11 +96,10 @@ public class InputManagerBehaviour : MonoBehaviour {
     private const int keyboardPlayers = 4;
 
 	// Use this for initialization
-	void Start ()
+	void Awake ()
     {
         buildPlayerInputKeyboards(keyboardPlayers);
         detectControllerChange();
-        detectInput();
 	}
 
     private void buildPlayerInputKeyboards(int size)

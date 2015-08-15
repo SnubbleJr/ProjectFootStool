@@ -10,7 +10,16 @@ public class SettingsScript : MonoBehaviour {
     //when the gameobject this is attached to is activated, we do this 
     public void goTime()
     {
-        if (settingsMenu != null)
+        if (settingsMenu)
+        {
             settingsMenu.SetActive(true);
+            try
+            {
+                settingsMenu.GetComponent<MenuScript>().entryFinished();
+            }
+            catch
+            {
+            }
+        }
     }
 }

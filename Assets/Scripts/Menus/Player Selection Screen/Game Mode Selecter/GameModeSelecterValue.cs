@@ -13,6 +13,6 @@ public class GameModeSelecterValue : MonoBehaviour {
 
     public void setValueText(string text)
     {
-        uiTextScript.enterText(text);
+        uiTextScript.setText(text);
     }
 }

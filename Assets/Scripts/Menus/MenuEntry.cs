@@ -17,7 +17,7 @@ public class MenuEntry : MonoBehaviour {
     private Text guiText;
     private Color defaultColor;
 
-    void Start()
+    void Awake()
     {
         guiText = GetComponent<Text>();
         defaultColor = guiText.color;
@@ -38,34 +38,28 @@ public class MenuEntry : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-
-        //dirst, see if applicable, else it's greyed out
-        if (!greyedOut)
-        {
-            //check if selected
-            if (selected)
-            {
-                //selected code
-                guiText.color = highlightedColor;
-            }
-            else
-            {
-                //unselected code
-                guiText.color = defaultColor;
-            }
-        }
-        else
-        {
-            guiText.color = Color.grey;
-        }
+        applyGreyedOutAndSelected();
     }
     
+    private void applyGreyedOutAndSelected()
+    {
+        //dirst, see if applicable, else it's greyed out
+        if (!greyedOut)
+            //check if selected
+            if (selected)
+                //selected code
+                guiText.color = highlightedColor;
+            else
+                //unselected code
+                guiText.color = defaultColor;
+        else
+            guiText.color = Color.grey;
+    }
+
     void OnGUI()
     {
         if (selected && selectDelegateGUI != null)
-        {
             selectDelegateGUI(true);
-        }
     }
 
     void selectionCheck()
@@ -92,6 +86,24 @@ public class MenuEntry : MonoBehaviour {
     public void setSelected(bool val)
     {
         selected = val;
+        try
+        {
+            applyGreyedOutAndSelected();
+        }
+        catch
+        {
+        }
+    }
+
+    public bool getGreyedOut()
+    {
+        return greyedOut;
+    }
+
+    public void setGreyedOut(bool val)
+    {
+        greyedOut = val;
+        applyGreyedOutAndSelected();
     }
 
     public void setSliderEntry(bool entry)

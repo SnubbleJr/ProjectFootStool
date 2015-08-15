@@ -1,0 +1,14 @@
+see if assetbundels is a thing
+if it is
+	see if levels folder exsists
+	if it does
+		see if we have a folder for the game mode we want
+		if it does
+			see how many levels are there
+			switch level count
+			case 0
+				load default level
+			case 1
+				load that level
+			defualt
+				level displayer

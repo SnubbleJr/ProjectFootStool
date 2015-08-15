@@ -11,10 +11,13 @@ public class PlayerControl : MonoBehaviour {
     public float moveForce;
     public float maxSpeed;
 
-    public AudioClip jumpSound;
-    public AudioClip dJumpSound;
-    public AudioClip landingSound;
-    public AudioClip deathSound;
+    public SFX jumpSound = SFX.Jump;
+    public SFX dJumpSound = SFX.DoubleJump;
+    public SFX fallingSound = SFX.Fall;
+    public SFX wallSlidingSound = SFX.WallSlide;
+    public SFX landingSound = SFX.Land;
+    public SFX flumpSound = SFX.Flump;
+    public SFX deathSound = SFX.Death;
 
     private int playerNo;
     private int teamNo;
@@ -94,7 +97,6 @@ public class PlayerControl : MonoBehaviour {
 
     private Rigidbody2D rigidbody2D;
     private Collider2D collider2D;
-    private AudioSource audio;
 
     private int groundLayerMask;
 
@@ -103,7 +105,6 @@ public class PlayerControl : MonoBehaviour {
     {
         rigidbody2D = GetComponent<Rigidbody2D>();
         collider2D = rigidbody2D.GetComponent<Collider2D>();
-        audio = GetComponent<AudioSource>();
 
         headCheck = transform.FindChild("HeadCheck");
 
@@ -163,17 +164,24 @@ public class PlayerControl : MonoBehaviour {
         playerBottomRight = new Vector2(transform.position.x + collider2D.bounds.extents.x, transform.position.y - collider2D.bounds.extents.y);
 
         if (debug)
-        {
             debugDrawHitBoxes();
-        }
 
         hit = false;
 
-        foreach(int opponentLayerMask in opponentLayerMasks)
+        foreach (int opponentLayerMask in opponentLayerMasks)
         {
             hit = Physics2D.Linecast(playerTopLeft, headCheckLeft.position, opponentLayerMask) || Physics2D.Linecast(playerTopRight, headCheckRight.position, opponentLayerMask) || hit;
+            if (hit)
+            {
+                SFXManagerBehaviour.Instance.stopLoop(this.gameObject, wallSlidingSound);
+                SFXManagerBehaviour.Instance.stopLoop(this.gameObject, fallingSound);
+
+                if (!dead)
+                    die(opponentLayerMask);
+            }
         }
-        
+
+            
         grounded = Physics2D.Linecast(playerBottomLeft, groundCheckLeft.position, groundLayerMask) || Physics2D.Linecast(playerBottomRight, groundCheckRight.position, groundLayerMask);
         
         RaycastHit2D ray;
@@ -187,7 +195,6 @@ public class PlayerControl : MonoBehaviour {
                 fallThroughPlat = ray.collider.gameObject.GetComponent<Collider2D>();
                 aboveJumpablePlate = true;
             }
-            print(ray.collider.gameObject.name);
         }
 
         ray = Physics2D.Raycast(playerTopRight, Vector2.up, platRayHeight, groundLayerMask);
@@ -265,6 +272,8 @@ public class PlayerControl : MonoBehaviour {
         //if on wall, set gorunded, so we can jump again
         if (onWall)
         {
+            SFXManagerBehaviour.Instance.loopSound(this.gameObject, wallSlidingSound);
+
             //reset jumps
             hasJumped = false;
             hasDoubleJumped = false;
@@ -277,6 +286,8 @@ public class PlayerControl : MonoBehaviour {
         }
         else
         {
+            SFXManagerBehaviour.Instance.stopLoop(this.gameObject, wallSlidingSound);
+
             hasBeenOnWall = false;
         }
     }
@@ -289,9 +300,7 @@ public class PlayerControl : MonoBehaviour {
         else
             Physics2D.IgnoreCollision(GetComponent<Collider2D>(), fallThroughPlat, false);
 
-        if (hit & !dead)
-            die();
-        else if (!hit)
+        if (!hit)
         {
             inputHandler();
             jumpHandler();
@@ -309,15 +318,21 @@ public class PlayerControl : MonoBehaviour {
 
     private void die()
     {
-        audio.PlayOneShot(deathSound, audio.volume * SFXVolumeSliderElement.volume);
+        //we've SD'd, set out own layer mask as killer
+        die((int)Mathf.Pow(2, (8 + playerNo)));
+    }
+
+    private void die(int killer)
+    {
+        SFXManagerBehaviour.Instance.playSound(deathSound);
         
         dead = true;
         spriteRenderer.color = Color.grey;
         GetComponent<BoxCollider2D>().enabled = false;
         anim.SetTrigger("Dead");
 
-        GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>().playerHit(this);
-        
+        GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>().playerHit(this, killer);
+                
         //screen ripple
         Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
         viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
@@ -337,7 +352,13 @@ public class PlayerControl : MonoBehaviour {
                 
         // If the player is holding down, apply fall force, unless they're on the floor
         if (down && !grounded)
-            rigidbody2D.AddForce(Vector2.up *-1 * fastFallForce);
+        {
+            rigidbody2D.AddForce(Vector2.up * -1 * fastFallForce);
+            //flump loop
+            SFXManagerBehaviour.Instance.loopSound(this.gameObject, fallingSound);
+        }
+        else
+            //SFXManagerBehaviour.Instance.stopLoop(this.gameObject, fallingSound);
 
         // If the player is changing direction or letting go of controls, stop all horizontal movement, but only on ground
         if (h != Mathf.Sign(rigidbody2D.velocity.x))
@@ -397,8 +418,13 @@ public class PlayerControl : MonoBehaviour {
         if (rigidbody2D.velocity.y < 0.2f && landed)
         {
             landed = false;
-            //landing sound
-            audio.PlayOneShot(landingSound, audio.volume * SFXVolumeSliderElement.volume);
+
+            if (down)
+                //flump sound
+                SFXManagerBehaviour.Instance.playSound(flumpSound);
+            else
+                //landing sound
+                SFXManagerBehaviour.Instance.playSound(landingSound);
 
             groundParticleSystem.Play();
             //screen shake
@@ -421,7 +447,7 @@ public class PlayerControl : MonoBehaviour {
 
         if (jump)
         {
-            audio.PlayOneShot(jumpSound, audio.volume * SFXVolumeSliderElement.volume);
+            SFXManagerBehaviour.Instance.playSound(jumpSound);
 
             //nulify current force from gravity
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
@@ -448,7 +474,7 @@ public class PlayerControl : MonoBehaviour {
         }
         if (doubleJump)
         {
-            audio.PlayOneShot(dJumpSound, audio.volume * SFXVolumeSliderElement.volume);
+            SFXManagerBehaviour.Instance.playSound(dJumpSound);
 
             //nulify current force from gravity
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
@@ -491,10 +517,11 @@ public class PlayerControl : MonoBehaviour {
         Debug.DrawRay(playerTopRight, Vector2.up * platRayHeight, Color.grey);
     }
 
-    public void setHit()
+    public void setHit(bool val)
     {
-        hit = true;
-        die();
+        hit = val;
+        if (hit & !dead)
+            die();
     }
 
     public void respawn()
@@ -534,8 +561,7 @@ public class PlayerControl : MonoBehaviour {
     }
 
     public void setPlayer(Player player, List<int> opponentNumbers)
-    {
-        
+    {        
         color = player.color.color;
         color.a = 1;
         spriteRenderer.color = color;
@@ -608,6 +634,16 @@ public class PlayerControl : MonoBehaviour {
     public void setDebug(bool value)
     {
         debug = value;
+    }
+
+    public Color getColor()
+    {
+        return color;
+    }
+
+    public Sprite getSprite()
+    {
+        return spriteRenderer.sprite;
     }
 }
 

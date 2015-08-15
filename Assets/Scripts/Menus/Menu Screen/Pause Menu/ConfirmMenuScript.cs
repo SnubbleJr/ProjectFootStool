@@ -56,6 +56,6 @@ public class ConfirmMenuScript : MonoBehaviour {
                 text = "Quit Game?";
                 break;
         }
-        GetComponentInChildren<UITextScript>().enterText(text);
+        GetComponentInChildren<UITextScript>().setText(text);
     }
 }

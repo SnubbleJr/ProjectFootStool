@@ -4,36 +4,45 @@ using System.Collections;
 public class SFXVolumeSliderElement : MonoBehaviour {
 
     public static float volume = 1f;
-    
-    private MenuScript menuScript;
-    private AudioClip SFXSound;
 
-    void Start()
+    public delegate void SFXSliderDelegate();
+    public static event SFXSliderDelegate volumeChanged;
+
+    private MenuScript menuScript;
+    private SFX SFXSound;
+
+    void Awake()
     {
         menuScript = transform.parent.GetComponent<MenuScript>();
-        SFXSound = menuScript.getSelectSound();
+        SFXSound = menuScript.getMenuUpSound();
     }
 
     //when the gameobject this is attached to is activated, we do this 
     public void goTime()
     {
-        //jump out
+        //set the volume to our value, based on our distance :3
+        volume = 1 - (float)menuScript.getIndex(this.gameObject) / (float)(menuScript.getEntryLength());
         transform.parent.SendMessage("finished");
+
+        if (volumeChanged != null)
+            volumeChanged();
     }
 
     //set volume if hovered over
     public void setSelected(bool selected)
     {
+        if (!menuScript)
+            menuScript = transform.parent.GetComponent<MenuScript>();
+
         if (selected)
         {
             //set the volume to our value, based on our distance :3
-            volume = (float)menuScript.getIndex(this.gameObject) / (float)(menuScript.getEntryLength() - 1);
+            volume = 1 - (float)menuScript.getIndex(this.gameObject) / (float)(menuScript.getEntryLength());
 
-            //if the clip exists
-            if (SFXSound != null)
-            {
-                AudioSource.PlayClipAtPoint(SFXSound, Camera.main.transform.position, volume);
-            }
+            SFXManagerBehaviour.Instance.playSound(SFXSound);
+
+            if (volumeChanged != null)
+                volumeChanged();
         }
     }
 }

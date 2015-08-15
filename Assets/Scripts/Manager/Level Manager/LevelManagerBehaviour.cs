@@ -8,7 +8,7 @@ public class LevelManagerBehaviour : MonoBehaviour {
     private GameObject[] levels;
 
 	// Use this for initialization
-	void Start ()
+	void Awake ()
     {
         levels = GameObject.FindGameObjectsWithTag("Level");
 

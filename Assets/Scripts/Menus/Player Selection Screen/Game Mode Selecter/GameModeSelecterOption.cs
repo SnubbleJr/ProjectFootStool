@@ -26,7 +26,7 @@ public class GameModeSelecterOption : MonoBehaviour {
     {
         try
         {
-            uiTextScript.enterText(text);
+            uiTextScript.setText(text);
         }
         catch
         {

@@ -14,7 +14,7 @@ public class BeatDetector : MonoBehaviour {
     private float prevStartupTime = 0;
 
 	// Use this for initialization
-	void Start ()
+	void Awake ()
     {
         MusicManagerBehaviour.songStarted += songStarted;
         MusicManagerBehaviour.songStopped += songStopped;
@@ -26,15 +26,18 @@ public class BeatDetector : MonoBehaviour {
 	
     void Update()
     {
-        //add the difference between update
-        currentTime += (Time.realtimeSinceStartup - prevStartupTime);
-
-        prevStartupTime = Time.realtimeSinceStartup;
-
-        if (currentTime >= beatTime)
+        if (started)
         {
-            currentTime -= beatTime;
-            beatFound();
+            //add the difference between update
+            currentTime += Time.unscaledDeltaTime;
+
+            prevStartupTime = Time.realtimeSinceStartup;
+
+            if (currentTime >= beatTime)
+            {
+                currentTime -= beatTime;
+                beatFound();
+            }
         }
     }
 
@@ -50,7 +53,29 @@ public class BeatDetector : MonoBehaviour {
     private void songStarted()
     {
         started = true;
+        switch(MusicManagerBehaviour.Instance.getCurrentTrack())
+        {
+            case MusicTrack.MainMenu:
+                bpm = 105;
+                break;
+            case MusicTrack.PlayerSelectionMenu:
+                bpm = 105;
+                break;
+            case MusicTrack.StockGame:
+                bpm = 125;
+                break;
+            case MusicTrack.KothGame:
+                bpm = 125;
+                break;
+            case MusicTrack.RaceGame:
+                bpm = 133;
+                break;
+        }
+
+        beatTime = 60f / bpm;
         currentTime = 0;
+        prevStartupTime = Time.realtimeSinceStartup;
+        beatFound();
     }
 
     private void songStopped()

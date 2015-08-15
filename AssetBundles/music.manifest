@@ -1,0 +1,21 @@
+ManifestFileVersion: 0
+CRC: 4080862439
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: ba22e94d1c56adbf154e1a174dee1ca9
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c516f2a3b2b6b67ef759f6410a790acd
+HashAppended: 0
+ClassTypes:
+- Class: 83
+  Script: {instanceID: 0}
+Assets:
+- Assets/Music/Stock.mp3
+- Assets/Music/Race.mp3
+- Assets/Music/Menu Base Layer.ogg
+- Assets/Music/Starfish.ogg
+- Assets/Music/Koth.mp3
+- Assets/Music/Menu Hype Layer.mp3
+Dependencies: []

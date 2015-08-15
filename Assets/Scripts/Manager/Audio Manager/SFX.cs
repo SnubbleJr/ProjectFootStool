@@ -1,0 +1,22 @@
+﻿public enum SFX
+{
+    MenuUp,
+    MenuDown,
+    Submit,
+    Cancel,
+    Pause,
+    Jump,
+    DoubleJump,
+    Fall,
+    Land,
+    Flump,
+    WallSlide,
+    Death,
+    HillEnter,
+    HillExit,
+    HillContested,
+    Countdown,
+    Go,
+    PointAdded,
+    None
+};

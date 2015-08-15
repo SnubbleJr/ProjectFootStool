@@ -2,6 +2,8 @@
 using UnityEngine.UI;
 using System.Collections;
 
+[RequireComponent(typeof(Text))]
+
 public class UITextScript : MonoBehaviour {
 
     private Text text;
@@ -12,13 +14,13 @@ public class UITextScript : MonoBehaviour {
         text = GetComponent<Text>();
 	}
 	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-
-    public void enterText(string str)
+    public void setText(string str)
     {
         text.text = str;
+    }
+
+    public void setColor(Color color)
+    {
+        text.color = color;
     }
 }

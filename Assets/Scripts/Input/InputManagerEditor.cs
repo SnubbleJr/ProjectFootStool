@@ -40,6 +40,7 @@ public class InputManagerEditor : MonoBehaviour {
         }
         return false;
     }
+
     public enum AxisType
     {
         KeyOrMouseButton = 0,
@@ -79,6 +80,12 @@ public class InputManagerEditor : MonoBehaviour {
         WiggleVertical = 5
     }
 
+    public enum AltControllerAxisDef
+    {
+        Horizontal = 6,
+        Vertical = 7,
+    }
+
     public enum ControllerButtonDef
     {
         Jump =  4,
@@ -94,8 +101,8 @@ public class InputManagerEditor : MonoBehaviour {
     {
         Horizontal = 1,
         Vertical = 2,
-        Cancel = 9,
-        Flump = 9
+        Flump = 9,
+        Cancel = Flump
     }
 
     public enum ControllerLeftHalfButtonDef
@@ -111,11 +118,11 @@ public class InputManagerEditor : MonoBehaviour {
     {
         Horizontal = 4,
         Vertical = 5,
-        Cancel = 10,
-        Flump = 10
+        Flump = 10,
+        Cancel = Flump
     }
 
-    public enum Controlle0rRightHalfButtonDef
+    public enum ControllerRightHalfButtonDef
     {
         Jump = 5,
         ChangeMode = 9,
@@ -126,7 +133,7 @@ public class InputManagerEditor : MonoBehaviour {
 
     private static void AddAxis(InputAxis axis)
     {
-        if (AxisDefined(axis.name)) return;
+        //if (AxisDefined(axis.name)) return;
 
         SerializedObject serializedObject = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/InputManager.asset")[0]);
         SerializedProperty axesProperty = serializedObject.FindProperty("m_Axes");
@@ -192,154 +199,120 @@ public class InputManagerEditor : MonoBehaviour {
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Pause", positiveButton = pause, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
 
     }
+    
+    private static InputAxis createInputAxis(string prefix, int id, string suffix, string axisName, int axisNo)
+    {
+        return createInputAxis(prefix, id, suffix, axisName, axisNo, false);
+    }
+
+    private static InputAxis createInputAxis(string prefix, int id, string suffix, string axisName, int axisNo, bool invert)
+    {
+        InputAxis inputAxis = new InputAxis()
+        {
+            name = prefix + id + suffix + axisName,
+            gravity = 1000,
+            dead = 0.19f,
+            sensitivity = 1,
+            snap = true,
+            type = AxisType.JoystickAxis,
+            axis = axisNo,
+            joyNum = id,
+        };
+
+        try
+        {
+            if (invert)
+                if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.Vertical)
+                    inputAxis.invert = true;
+
+            if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.Flump)
+            {
+                inputAxis.dead = 0.19f;
+                inputAxis.sensitivity = 100;
+                inputAxis.snap = false;
+            }
+        }
+        catch
+        {
+        }
+
+        return inputAxis;
+    }
+
+    private static InputAxis createInputButton(string prefix, int id, string suffix, string buttonName, int buttonNo)
+    {
+        return(new InputAxis()
+        {
+            name = prefix + id + suffix + buttonName,
+            positiveButton = "joystick " + id + " button " + buttonNo.ToString(),
+            gravity = 1000,
+            dead = 0.001f,
+            sensitivity = 1000,
+            type = AxisType.KeyOrMouseButton,
+        });
+    }
 
     private static void SetupNonSharedControllers()
     {
         // Add gamepad definitions for each not shared controller
         for (int i = 1; i <= 8; i++)
         {
-            //axis
+            //axis - we try and invert
             foreach (string axisName in Enum.GetNames(typeof(ControllerAxisDef)))
             {
-                ControllerAxisDef axis = (ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName);
+                ControllerAxisDef axis = (ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName, true);
+                AddAxis(createInputAxis("Controller ", i, " ", axisName, (int)axis));
+            }
 
-                InputAxis inputAxis = new InputAxis()
-                {
-                    name = "Controller " + i + " " + axisName,
-                    gravity = 1000,
-                    dead = 0.19f,
-                    sensitivity = 1,
-                    snap = true,
-                    type = AxisType.JoystickAxis,
-                    axis = (int)axis,
-                    joyNum = i,
-                };
-
-                if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.Vertical)
-                    inputAxis.invert = true;
-
-                if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.Flump)
-                {
-                    inputAxis.dead = 0.19f;
-                    inputAxis.sensitivity = 100;
-                    inputAxis.snap = false;
-                }
-                AddAxis(inputAxis);
+            //alternernate axis - we don't try invert
+            foreach (string axisName in Enum.GetNames(typeof(AltControllerAxisDef)))
+            {
+                AltControllerAxisDef axis = (AltControllerAxisDef)Enum.Parse(typeof(AltControllerAxisDef), axisName, false);
+                AddAxis(createInputAxis("Controller ", i, " ", axisName, (int)axis));
             }
 
             //buttons
             foreach (string buttonName in Enum.GetNames(typeof(ControllerButtonDef)))
             {
                 ControllerButtonDef button = (ControllerButtonDef)Enum.Parse(typeof(ControllerButtonDef), buttonName);
-
-                AddAxis(new InputAxis()
-                {
-                    name = "Controller " + i + " " + buttonName,
-                    positiveButton = "joystick " + i + " button " + ((int)button).ToString(),
-                    gravity = 1000,
-                    dead = 0.001f,
-                    sensitivity = 1000,
-                    type = AxisType.KeyOrMouseButton,
-                });
+                AddAxis(createInputButton("Controller ", i, " ", buttonName, (int)button));
             }
         }
     }
-
+    
     private static void SetupSharedControllers()
     {
         // Add gamepad definitions for each shared controller
         for (int i = 1; i <= 8; i++)
         {
             //left side
-            //axis
+            //axis - we try and invert
             foreach (string axisName in Enum.GetNames(typeof(ControllerLeftHalfAxisDef)))
             {
-                ControllerLeftHalfAxisDef axis = (ControllerLeftHalfAxisDef)Enum.Parse(typeof(ControllerLeftHalfAxisDef), axisName);
-
-                InputAxis inputAxis = new InputAxis()
-                {
-                    name = "Controller " + i + " left side " + axisName,
-                    gravity = 1000,
-                    dead = 0.19f,
-                    sensitivity = 1,
-                    snap = true,
-                    type = AxisType.JoystickAxis,
-                    axis = (int)axis,
-                    joyNum = i,
-                };
-
-                if ((ControllerLeftHalfAxisDef)Enum.Parse(typeof(ControllerLeftHalfAxisDef), axisName) == ControllerLeftHalfAxisDef.Vertical)
-                    inputAxis.invert = true;
-
-                if (axis == ControllerLeftHalfAxisDef.Flump)
-                {
-                    inputAxis.dead = 0.19f;
-                    inputAxis.sensitivity = 100;
-                    inputAxis.snap = false;
-                }
-                AddAxis(inputAxis);
+                ControllerLeftHalfAxisDef axis = (ControllerLeftHalfAxisDef)Enum.Parse(typeof(ControllerLeftHalfAxisDef), axisName, true);
+                AddAxis(createInputAxis("Controller ", i, " left side ", axisName, (int)axis));
             }
 
             //buttons
             foreach (string buttonName in Enum.GetNames(typeof(ControllerLeftHalfButtonDef)))
             {
                 ControllerLeftHalfButtonDef button = (ControllerLeftHalfButtonDef)Enum.Parse(typeof(ControllerLeftHalfButtonDef), buttonName);
-
-                AddAxis(new InputAxis()
-                {
-                    name = "Controller " + i + " left side " + buttonName,
-                    positiveButton = "joystick " + i + " button " + ((int)button).ToString(),
-                    gravity = 1000,
-                    dead = 0.001f,
-                    sensitivity = 1000,
-                    type = AxisType.KeyOrMouseButton,
-                });
+                AddAxis(createInputButton("Controller ", i, " left side ", buttonName, (int)button));
             }
 
             //right side
-            //axis
+            //axis - we try and invert
             foreach (string axisName in Enum.GetNames(typeof(ControllerRightHalfAxisDef)))
             {
-                ControllerRightHalfAxisDef axis = (ControllerRightHalfAxisDef)Enum.Parse(typeof(ControllerRightHalfAxisDef), axisName);
-
-                InputAxis inputAxis = new InputAxis()
-                {
-                    name = "Controller " + i + " right side " + axisName,
-                    gravity = 1000,
-                    dead = 0.19f,
-                    sensitivity = 1,
-                    snap = true,
-                    type = AxisType.JoystickAxis,
-                    axis = (int)axis,
-                    joyNum = i,
-                };
-
-                if ((ControllerRightHalfAxisDef)Enum.Parse(typeof(ControllerRightHalfAxisDef), axisName) == ControllerRightHalfAxisDef.Vertical)
-                    inputAxis.invert = true;
-
-                if (axis == ControllerRightHalfAxisDef.Flump)
-                {
-                    inputAxis.dead = 0.19f;
-                    inputAxis.sensitivity = 100;
-                    inputAxis.snap = false;
-                }
-                AddAxis(inputAxis);
+                ControllerRightHalfAxisDef axis = (ControllerRightHalfAxisDef)Enum.Parse(typeof(ControllerRightHalfAxisDef), axisName, true);
+                AddAxis(createInputAxis("Controller ", i, " right side ", axisName, (int)axis));
             }
 
             //buttons
-            foreach (string buttonName in Enum.GetNames(typeof(Controlle0rRightHalfButtonDef)))
+            foreach (string buttonName in Enum.GetNames(typeof(ControllerRightHalfButtonDef)))
             {
-                Controlle0rRightHalfButtonDef button = (Controlle0rRightHalfButtonDef)Enum.Parse(typeof(Controlle0rRightHalfButtonDef), buttonName);
-
-                AddAxis(new InputAxis()
-                {
-                    name = "Controller " + i + " right side " +  buttonName,
-                    positiveButton = "joystick " + i.ToString() + " button " + ((int)button).ToString(),
-                    gravity = 1000,
-                    dead = 0.001f,
-                    sensitivity = 1000,
-                    type = AxisType.KeyOrMouseButton,
-                });
+                ControllerRightHalfButtonDef button = (ControllerRightHalfButtonDef)Enum.Parse(typeof(ControllerRightHalfButtonDef), buttonName);
+                AddAxis(createInputButton("Controller ", i, " right side ", buttonName, (int)button));
             }
         }
     }

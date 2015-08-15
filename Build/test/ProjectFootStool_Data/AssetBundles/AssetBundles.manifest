@@ -1,0 +1,12 @@
+ManifestFileVersion: 0
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: music
+      Dependencies: {}
+    Info_1:
+      Name: levels/koth
+      Dependencies: {}
+    Info_2:
+      Name: levels/stock
+      Dependencies: {}

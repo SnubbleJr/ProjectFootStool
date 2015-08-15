@@ -3,7 +3,7 @@ using System.Collections;
 
 public class EntryMovementScript : MonoBehaviour {
 
-    public float time = 15f;
+    public float time = 30f;
 
     private Vector3 pos;
     

@@ -61,7 +61,7 @@ public class ControllerNumberAssigner : MonoBehaviour {
         }
 
         //clear controller rings sprite and text
-        SendMessage("enterText", "");
+        SendMessage("setText", "", SendMessageOptions.DontRequireReceiver);
         ringSpriteRenderer.sprite = null;
     }
 
@@ -85,6 +85,6 @@ public class ControllerNumberAssigner : MonoBehaviour {
                 break;
         }
 
-        SendMessage("enterText", no.ToString());
+        SendMessage("setText", no.ToString());
     }
 }

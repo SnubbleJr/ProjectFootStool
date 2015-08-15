@@ -70,18 +70,28 @@ public class GameModeSelectionScriptManager : MonoBehaviour {
         gameModeSelector.enabled = value;
     }
 
-    public GameMode GetGameMode()
-    {
-        return gameModeSelector.getGameMode();
-    }
-
     public int getStockCount()
     {
         return gameModeSelector.getStockCount();
     }
 
+    public GameMode GetGameMode()
+    {
+        return gameModeSelector.getGameMode();
+    }
+
     public void setGameMode(GameMode gameMode)
     {
         gameModeSelector.setGameMode(gameMode);
+    }
+
+    public void setStockCount(int count)
+    {
+        gameModeSelector.setStockCount(count);
+    }
+
+    public void setTeamMode(bool mode)
+    {
+        gameModeSelector.setTeamMode(mode);
     }
 }
