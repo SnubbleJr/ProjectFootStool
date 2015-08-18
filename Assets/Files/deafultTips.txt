@@ -1,0 +1,19 @@
+Move into a wall to slow down and reset your jumps
+You can wall jump
+A player sparks when they have reset their jumps
+You gain points in Koth only if your team is in the hill
+Double Jumping is a good way fake out an attack
+Flump to fall faster
+You are your own team
+You can pass through light coloured platforms
+You can add custom tracks
+You can make custom levels
+You can add custom tips
+You can play with up to 20 players
+Press the back & start button together to split or join a controller
+Don't fall off the stage!
+There's more than one way to win a Race
+Vote for me on Greenlight... pls
+AirHorn airHorn = new AirHorn( );
+Player.instance.getHype( );
+Are we recording?

@@ -24,7 +24,6 @@ public class GameModeSelectionScript : MonoBehaviour {
 
     private bool active = false;
     private bool switchLetGo = false;               //used so we don't immediately quit because the switch key was already held down
-    private bool stockSelected = false;             //used to differ between when stock is being changed and gamemode
 
     private enum optionSelected {team, gameMode, gameModeValue}
 
@@ -50,8 +49,9 @@ public class GameModeSelectionScript : MonoBehaviour {
         InputManagerBehaviour.playerRemoved += playerRemoved;
 
         //display options
-        teamOption.setOptionText("Teams");
-        gameModeOption.setOptionText("GameMode");
+        //clear every thing
+        foreach (Transform child in transform)
+            child.gameObject.SetActive(true);
         updateGameModeValue();
 
         //display to clear things
@@ -64,17 +64,8 @@ public class GameModeSelectionScript : MonoBehaviour {
         InputManagerBehaviour.playerRemoved -= playerRemoved;
 
         //clear every thing
-        teamOption.setOptionText("");
-        teamOption.setValueText("");
-        teamOption.setValueText("", "");
-
-        gameModeOption.setOptionText("");
-        gameModeOption.setValueText("");
-        gameModeOption.setValueText("", "");
-
-        gameModeValueOption.setOptionText("");
-        gameModeValueOption.setValueText("");
-        gameModeValueOption.setValueText("", "");
+        foreach (Transform child in transform)
+            child.gameObject.SetActive(false);
     }
 
     void buttonDetected(PlayerInputScheme player, string inputName, float value)

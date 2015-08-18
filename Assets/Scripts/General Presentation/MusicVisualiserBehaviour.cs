@@ -84,7 +84,13 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
     private void positionBars()
     {
         for (int i = 0; i < bars.Count; i++)
-            bars[i].transform.position = Vector3.Lerp(bars[i].transform.position, getBarPos(i), Time.deltaTime * lerpSpeed);
+        {
+            Vector3 barPos = getBarPos(i);
+            if (Vector3.Distance(bars[i].transform.position, barPos) < 0.1f)
+                bars[i].transform.position = barPos;
+            else
+                bars[i].transform.position = Vector3.Lerp(bars[i].transform.position, barPos, Time.deltaTime * lerpSpeed);
+        }
     }
 
     private Vector3 getBarPos(int i)
@@ -157,7 +163,8 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
             return;
         }
 
-        float[] spectrum = currentTrack.GetSpectrumData(1024, 0, FFTWindow.BlackmanHarris);
+        float[] spectrum = new float[1024];
+        currentTrack.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
 
         if (bars.Count > 0)
             //find out how many samples are represented by a bar

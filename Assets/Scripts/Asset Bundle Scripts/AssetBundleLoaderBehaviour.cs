@@ -5,16 +5,20 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
 
     private PanelSlider loadingloop;
     private UITextScript loadingTextScript;
+    private UIImageScript loadingImage;
+    private bool fadeLoop = false;
 
     public static bool musicReady = false;
     public static bool settingReady = false;
     public static bool levelReady = false;
-    public static bool statReady = false;
+    public static bool statsReady = false;
+    public static bool tipsReady = false;
 
     public delegate void AssetBundleLoadedDelegate();
     public static event AssetBundleLoadedDelegate musicLoaded;
-    public static event AssetBundleLoadedDelegate statLoaded;
+    public static event AssetBundleLoadedDelegate statsLoaded;
     public static event AssetBundleLoadedDelegate settingsLoaded;
+    public static event AssetBundleLoadedDelegate tipsLoaded;
     public static event AssetBundleLoadedDelegate levelsLoaded;
     public static event AssetBundleLoadedDelegate allLoaded;
 
@@ -35,10 +39,22 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
     }
 
 	// Use this for initialization
-	void Awake ()
+	void OnEnable ()
     {
         StartCoroutine(startLoading());
 	}
+
+    void OnDisable ()
+    {
+        musicReady = false;
+        settingReady = false;
+        levelReady = false;
+        statsReady = false;
+        tipsReady = false;
+
+        loadingloop.gameObject.SetActive(true);
+        loadingImage.setColor(Color.white);
+    }
 
     private IEnumerator startLoading()
     {
@@ -46,15 +62,21 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
         yield return StartCoroutine(loadMusic());
         yield return StartCoroutine(loadSettings());
         yield return StartCoroutine(loadStats());
-        //yield return StartCoroutine(loadLevels());
+        yield return StartCoroutine(loadTips());
+        yield return StartCoroutine(loadLevels());
+        yield return StartCoroutine(setLoadingLoop());
+
+        if (allLoaded != null)
+            allLoaded();
     }
 
     private IEnumerator createLoadingLoop()
     {
         loadingloop = GetComponentInChildren<PanelSlider>();
         loadingTextScript = loadingloop.GetComponentInChildren<UITextScript>();
+        loadingImage = transform.GetComponentInChildren<UIImageScript>();
 
-        loadingloop.setDestination(Camera.main.ViewportToWorldPoint(new Vector3(1f, 1f, 0)));
+        loadingloop.setDestination(new Vector2(Camera.main.pixelWidth / 5, -Camera.main.pixelHeight / 11));
         loadingloop.setSpeed(1000);
         loadingloop.moveToDestination();
 
@@ -63,23 +85,27 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
 
     private IEnumerator setLoadingLoop()
     {
+        string text = "";
         if (!getAllLoaded())
         {
-            string text = "";
             if (!musicReady)
-                text = "Downloading Music...";
+                text = "Loading Music...";
             else if (!settingReady)
-                    text = "Downloading Settings...";
-                else if (!statReady)
-                        text = "Downloading Stats...";
-                    else if (!levelReady)
-                            text = "Downloading Levels...";
-
-            loadingTextScript.setText(text);
-            resetLoadingLoop();
+                text = "Loading Settings...";
+            else if (!statsReady)
+                text = "Loading Stats...";
+            else if (!tipsReady)
+                text = "Loading tips...";
+            else if (!levelReady)
+                text = "Loading Levels...";
         }
         else
+        {
+            text = "Have fun...";
             stopLoadingLoop();
+        }
+
+        loadingTextScript.setText(text);
 
         yield return null;
     }
@@ -98,10 +124,26 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
     {
         //stop loop from appearing now
         if (loadingloop)
+            fadeLoop = true;
+    }
+
+    void Update()
+    {
+        if (loadingloop && fadeLoop)
+            fadeLoadingLoop();
+    }
+
+    private void fadeLoadingLoop()
+    {
+        Color color = loadingImage.getColor();
+        color = Color.Lerp(color, Color.clear, 5 * Time.deltaTime);
+        if (color.a < 0.1f)
         {
-            loadingloop.backToStart();
             loadingloop.gameObject.SetActive(false);
-        }  
+            fadeLoop = false;
+        }
+        else
+            loadingImage.setColor(color);
     }
 
     private IEnumerator loadMusic()
@@ -129,16 +171,26 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
         yield return StartCoroutine(setLoadingLoop());
         //wait for music to load up
         yield return StartCoroutine(LoadStatsFile.Instance.loadStatsFile());
-        statReady = true;
-        if (statLoaded != null)
-            statLoaded();
+        statsReady = true;
+        if (statsLoaded != null)
+            statsLoaded();
+    }
+
+    private IEnumerator loadTips()
+    {
+        yield return StartCoroutine(setLoadingLoop());
+        //wait for music to load up
+        yield return StartCoroutine(LoadTipsFile.Instance.loadTipsFile());
+        tipsReady = true;
+        if (tipsLoaded != null)
+            tipsLoaded();
     }
 
     private IEnumerator loadLevels()
     {
         yield return StartCoroutine(setLoadingLoop());
         //wait for music to load up
-        yield return StartCoroutine(LoadLevelAssetBundles.Instance.loadLevelABs());
+        //yield return StartCoroutine(LoadLevelAssetBundles.Instance.loadLevelABs());
         levelReady = true;
         if (levelsLoaded != null)
             levelsLoaded();
@@ -146,6 +198,6 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
 
     public bool getAllLoaded()
     {
-        return (musicReady && settingReady && levelReady && statReady);
+        return (musicReady && settingReady && levelReady && statsReady && tipsReady);
     }
 }

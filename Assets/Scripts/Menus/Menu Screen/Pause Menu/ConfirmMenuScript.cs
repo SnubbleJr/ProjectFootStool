@@ -25,15 +25,11 @@ public class ConfirmMenuScript : MonoBehaviour {
     private void buttonPressed(PlayerInputScheme player, string input, float value)
     {
         //handel controls if in focus
-        switch (input)
-        {
-            case "Cancel":
-                exit(PauseOption.cancel);
-                break;
-            case "Submit":
-                exit(currentOption);
-                break;
-        }
+        if (input == player.inputs[PlayerInput.CancelInput].shortName)
+            exit(PauseOption.cancel);
+
+        if (input == player.inputs[PlayerInput.SubmitInput].shortName)
+            exit(currentOption);
     }
 
     private void exit(PauseOption option)

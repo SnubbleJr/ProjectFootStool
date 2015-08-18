@@ -5,7 +5,6 @@ public class MovingBackground : MonoBehaviour {
 
     public Material stock, koth, race, settings, quit, black;
 
-    private Mesh mesh;
     private Renderer renderer;
     private int selectedOption;
     private float offsetXSpeed = 1f;

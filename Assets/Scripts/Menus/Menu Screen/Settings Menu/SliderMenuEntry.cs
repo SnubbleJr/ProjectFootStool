@@ -23,7 +23,7 @@ public class SliderMenuEntry : MonoBehaviour
         
         GetComponent<MenuScript>().setIndex(selectedEntry);
 
-        for (int i = 0; i < transform.GetChildCount(); i++)
+        for (int i = 0; i < transform.childCount; i++)
         {
             Transform child = transform.GetChild(i);
             //set all the children to be a slider menu entry so it doesn't move - does nothing atm

@@ -16,7 +16,8 @@ public class UITextScript : MonoBehaviour {
 	
     public void setText(string str)
     {
-        text.text = str;
+        if (!text.text.Equals(str))
+            text.text = str;
     }
 
     public void setColor(Color color)

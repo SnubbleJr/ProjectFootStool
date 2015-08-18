@@ -15,7 +15,7 @@ public class PlayerStatsPanel : MonoBehaviour {
     public StatsPanelType panelType;
     public SFX readySound;
     public UITextScript playerText, KOText, TKOText, SDText;
-    public UIImageScript playerImage, bulliedImage, bulliedByImage;
+    public UIImageScript playerImage, crownImage, bulliedImage, bulliedByImage;
     public UITextScript readyText;
 
     private PulseInwardsScript pulseScript;
@@ -27,6 +27,7 @@ public class PlayerStatsPanel : MonoBehaviour {
     private PlayerControl bulliedControl, bulliedByControl;
     private PlayerStats stats;
 
+    private bool won = false;
     private bool readyd = false;
 
     void Awake()
@@ -44,6 +45,7 @@ public class PlayerStatsPanel : MonoBehaviour {
         SDText.gameObject.SetActive(true);
 
         playerImage.gameObject.SetActive(true);
+        crownImage.gameObject.SetActive(won);
 
         if (panelType == StatsPanelType.Long)
         {
@@ -60,6 +62,7 @@ public class PlayerStatsPanel : MonoBehaviour {
         SDText.gameObject.SetActive(false);
 
         playerImage.gameObject.SetActive(false);
+        crownImage.gameObject.SetActive(false);
 
         if (panelType == StatsPanelType.Long)
         {
@@ -72,9 +75,8 @@ public class PlayerStatsPanel : MonoBehaviour {
     {
         SFXManagerBehaviour.Instance.playSound(readySound);
         readyText.gameObject.SetActive(true);
-        //pulse downwards (if we have arrived)
-        if (!GetComponent<PanelSlider>().enabled)
-            pulseScript.pulse();
+        //pulse downwards
+        pulseScript.pulse();
     }
 
     private void hideReady()
@@ -97,10 +99,11 @@ public class PlayerStatsPanel : MonoBehaviour {
         }
     }
 
-    public void setStats(PlayerControl control, PlayerStats stat, PlayerControl bullid, PlayerControl bullidBy)
+    public void setStats(PlayerControl control, PlayerStats stat, bool winner, PlayerControl bullid, PlayerControl bullidBy)
     {
         player = control;
         stats = stat;
+        won = winner;
         bulliedControl = bullid;
         bulliedByControl = bullidBy;
 
@@ -112,6 +115,8 @@ public class PlayerStatsPanel : MonoBehaviour {
 
         playerImage.setSprite(player.getSprite());
         playerImage.setColor(player.getColor());
+
+        crownImage.gameObject.SetActive(won);
 
         if (panelType == StatsPanelType.Long)
         {

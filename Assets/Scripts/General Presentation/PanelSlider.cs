@@ -24,6 +24,12 @@ public class PanelSlider : MonoBehaviour {
         speed = sp;
     }
 
+    public void setTime(float time)
+    {
+        start = transform.localPosition;
+        setSpeed(Vector2.Distance(start, destination) / time);
+    }
+
     public void moveToDestination()
     {
         //lerp  from start to dest
@@ -58,10 +64,9 @@ public class PanelSlider : MonoBehaviour {
             transform.localPosition = Vector2.MoveTowards(transform.localPosition, destination, speed * Time.deltaTime);
 
             RectTransform rectTrans = transform.parent.GetComponent<RectTransform>();
-            if (!rectTrans.rect.Contains(transform.localPosition))
+            if (!rectTrans.rect.Contains(transform.localPosition * 0.9f))
             {
                 //inform of arrival
-                toExit = false;
                 if (exited != null)
                     exited(this);
             }
@@ -80,28 +85,26 @@ public class PanelSlider : MonoBehaviour {
 
     public void playArrivedSound()
     {
-        //playsound
-        if (arrivedSound != null)
-            SFXManagerBehaviour.Instance.playSound(arrivedSound);
+        SFXManagerBehaviour.Instance.playSound(arrivedSound);
     }
+
     public void playArringSound()
     {
-        //playsound
-        if (arrivedSound != null)
-            SFXManagerBehaviour.Instance.playSound(arrivingSound);
+        SFXManagerBehaviour.Instance.playSound(arrivingSound);
     }
 
     public void playLeavingSound()
     {
-        //playsound
-        if (arrivedSound != null)
-            SFXManagerBehaviour.Instance.playSound(leavingSound);
+        SFXManagerBehaviour.Instance.playSound(leavingSound);
     }
 
     public void playLeftSound()
     {
-        //playsound
-        if (arrivedSound != null)
-            SFXManagerBehaviour.Instance.playSound(leftSound);
+        SFXManagerBehaviour.Instance.playSound(leftSound);
+    }
+
+    public void playSound(SFX sound)
+    {
+        SFXManagerBehaviour.Instance.playSound(sound);
     }
 }

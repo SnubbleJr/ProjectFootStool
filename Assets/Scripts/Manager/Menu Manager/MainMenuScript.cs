@@ -4,11 +4,10 @@ using System.Collections;
 public class MainMenuScript : MonoBehaviour {
 
     public bool playPlayerMusic = false;
-    public bool playGameMusic = false;
 
     private PlayerManagerBehaviour playerManager;
     private PlayerFollower playerFollower;
-    private PauseMenuScript pauseMenue;
+    private PauseMenuScript pauseMenu;
     private PlayerSelectionMenuScript playerSelectionMenu;
     private LevelManagerBehaviour levelManager;
     private MusicComponent musicComponent;
@@ -25,7 +24,7 @@ public class MainMenuScript : MonoBehaviour {
         playerManager = GameObject.Find("Player Manager").GetComponent<PlayerManagerBehaviour>();
         levelManager = GameObject.Find("Level Manager").GetComponent<LevelManagerBehaviour>();
         playerFollower = Camera.main.GetComponent<PlayerFollower>();
-        pauseMenue = GetComponent<PauseMenuScript>();
+        pauseMenu = GetComponent<PauseMenuScript>();
         playerSelectionMenu = GetComponent<PlayerSelectionMenuScript>();
         musicComponent = GetComponent<MusicComponent>();
 	}
@@ -71,13 +70,6 @@ public class MainMenuScript : MonoBehaviour {
 
         Player[] players = playerSelectionMenu.getReadyPlayers();
 
-        if (playGameMusic)
-        {
-            //play gamemode music
-            musicComponent.setMusic(gameMode);
-            musicComponent.playMusic();
-        }
-
         levelManager.setLevel(gameMode);
 
         //disable player menu scipt
@@ -86,14 +78,14 @@ public class MainMenuScript : MonoBehaviour {
 
         playerManager.startGame(players, gameMode, team, scoreCount);
         Camera.main.transform.rotation = Quaternion.identity;
-        pauseMenue.enabled = true;
+        pauseMenu.enabled = true;
     }
 
     public void endGame()
     {
         inGame = false;
         playerFollower.enabled = false;
-        pauseMenue.enabled = false;
+        pauseMenu.enabled = false;
     }
 
     public void exitLevel()

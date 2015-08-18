@@ -5,4 +5,5 @@
     StockGame,
     KothGame,
     RaceGame,
+    Custom
 };

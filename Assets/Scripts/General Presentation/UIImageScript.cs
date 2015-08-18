@@ -32,6 +32,11 @@ public class UIImageScript : MonoBehaviour {
             image.SetNativeSize();
     }
 
+    public Color getColor()
+    {
+        return image.color;
+    }
+
     public void setColor(Color color)
     {
         image.color = color;

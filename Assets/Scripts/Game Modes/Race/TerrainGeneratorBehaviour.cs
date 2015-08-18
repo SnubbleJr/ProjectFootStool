@@ -6,21 +6,11 @@ public class TerrainGeneratorBehaviour : MonoBehaviour {
 
     //generates platforms at intervals
 
-    public GameObject platform;
+    public GameObject preferedPlatform;
+    public GameObject[] specialPlatforms;
 
     private List<GameObject> platforms = new List<GameObject>();
     
-	// Use this for initialization
-	void Start ()
-    {
-	}
-	
-	// Update is called once per frame
-	void Update ()
-    {
-	
-	}
-
     public void spawnPlatforms(int startAtLevel, int levelAmount)
     {
         //spawns platforms for levelAmount amount of levels
@@ -35,9 +25,23 @@ public class TerrainGeneratorBehaviour : MonoBehaviour {
 
         for (int i = 0; i < rand; i++)
         {
+            GameObject platformPrefab;
+            //random platform
+            int index = (int)Random.Range(0, specialPlatforms.Length * 2);
+            //weight toward perfered pplat
+            if (index >= specialPlatforms.Length)
+                platformPrefab = preferedPlatform;
+            else
+                platformPrefab = specialPlatforms[index];
+
             Vector2 pos = new Vector2(Random.Range(-8f, 8f), height);
-            GameObject plat = Instantiate(platform, pos, transform.rotation) as GameObject;
+            GameObject plat = CustomLevelParser.Instance.parseObject(platformPrefab);
+            plat.transform.position = pos;
             plat.transform.parent = transform;
+
+
+            plat.BroadcastMessage("startFade", SendMessageOptions.DontRequireReceiver);
+
             platforms.Add(plat);
         }
     }

@@ -70,6 +70,9 @@ public class BeatDetector : MonoBehaviour {
             case MusicTrack.RaceGame:
                 bpm = 133;
                 break;
+            case MusicTrack.Custom:
+                bpm = 124;
+                break;
         }
 
         beatTime = 60f / bpm;
@@ -81,5 +84,7 @@ public class BeatDetector : MonoBehaviour {
     private void songStopped()
     {
         started = false;
+        currentTime = 0;
+        prevStartupTime = Time.realtimeSinceStartup;
     }
 }

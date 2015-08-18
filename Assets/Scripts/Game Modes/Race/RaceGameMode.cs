@@ -26,23 +26,45 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
 
     void Awake()
     {
-
         playerManager = GetComponent<PlayerManagerBehaviour>();
-        levelMover = GameObject.Find("Level Mover").GetComponent<LevelMoverScript>();
-        terrainGenerator = GameObject.Find("Terrain Generator").GetComponent<TerrainGeneratorBehaviour>();
+        levelMover = GetComponentInChildren<LevelMoverScript>();
+        terrainGenerator = GetComponentInChildren<TerrainGeneratorBehaviour>();
     }
 
     void Start()
     {
-        levelMover.enabled = true;
-        terrainGenerator.enabled = true;
-
-        restartRound();
+        tryStartGame();
     }
 
     void OnEnable()
     {
+        tryStartGame();
+    }
+
+    void OnDisable()
+    {
         restartRound();
+
+        levelMover.enabled = false;
+        terrainGenerator.enabled = false;
+    }
+
+    private void tryStartGame()
+    {
+        try
+        {
+            terrainGenerator.enabled = true;
+            restartRound();
+        }
+        catch
+        {
+            playerManager = GetComponent<PlayerManagerBehaviour>();
+            levelMover = GameObject.Find("Level Mover").GetComponent<LevelMoverScript>();
+            terrainGenerator = GameObject.Find("Terrain Generator").GetComponent<TerrainGeneratorBehaviour>();
+
+            terrainGenerator.enabled = true;
+            restartRound();
+        }
     }
 
     void OnGUI()
@@ -63,21 +85,35 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
                 j = j + 2;
 
                 playerColors[i].color.a = 1;
-                GUI.contentColor = playerColors[i].color;
+                Color color1 = playerColors[i].color;
+                Color color2 = Color.black;
 
-                GUI.Label(new Rect((width * j) + 2, 5, 50, 30), "<color=black>" + playerControls[i].getScore().ToString() + "</color>");
+                //if player is hit, grey out their score
+                if (playerControls[i].getHit())
+                {
+                    color1.a = 0.5f;
+                    color2.a = 0.5f;
+                }
+
+                GUI.contentColor = color2;
+                GUI.Label(new Rect((width * j) + 2, 5, 50, 30), playerControls[i].getScore().ToString());
+                GUI.contentColor = color1;
                 GUI.Label(new Rect((width * j), 3, 50, 30), playerControls[i].getScore().ToString());
 
                 if (team)
                 {
                     //draw team in little number underneath
-                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15><color=black>T " + playerControls[i].getTeamNo().ToString() + "</color></size>");
+                    GUI.contentColor = color2;
+                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15>T " + playerControls[i].getTeamNo().ToString() + "</size>");
+                    GUI.contentColor = color1;
                     GUI.Label(new Rect((width * j), 4 + 20, 50, 30), "<size=15>T " + playerControls[i].getTeamNo().ToString() + "</size>");
                 }
                 else
                 {
                     //draw player in little number underneath
-                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15><color=black>P " + playerControls[i].getTeamNo().ToString() + "</color></size>");
+                    GUI.contentColor = color2;
+                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15>P " + playerControls[i].getTeamNo().ToString() + "</size>");
+                    GUI.contentColor = color1;
                     GUI.Label(new Rect((width * j), 4 + 20, 50, 30), "<size=15>P " + playerControls[i].getTeamNo().ToString() + "</size>");
                 }
             }

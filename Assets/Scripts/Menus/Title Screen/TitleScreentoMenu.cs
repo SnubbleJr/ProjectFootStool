@@ -13,6 +13,20 @@ public class TitleScreentoMenu : MonoBehaviour {
         //stop music
         musicComponent = GetComponent<MusicComponent>();
         musicComponent.stopMusic();
+
+        InputManagerBehaviour.buttonPressed += buttonDetected;
+    }
+
+    void OnDisable()
+    {
+        InputManagerBehaviour.buttonPressed -= buttonDetected;
+    }
+
+    void buttonDetected(PlayerInputScheme player, string input, float value)
+    {
+        //cheeky overide for this specail case
+        if (input == player.inputs[PlayerInput.StartGameInput].shortName)
+            goTime();
     }
 
     //when the gameobject this is attached to is activated, we do this 
@@ -20,10 +34,15 @@ public class TitleScreentoMenu : MonoBehaviour {
     {
         if (mainMenu != null)
         {
-            Invoke("activateMenu", time);
+            //check to see if we have loaded everything in
+            if (AssetBundleLoaderBehaviour.Instance.getAllLoaded())
+            {
 
-            //disable us
-            this.transform.parent.gameObject.SetActive(false);
+                Invoke("activateMenu", time);
+
+                //disable us
+                this.transform.parent.gameObject.SetActive(false);
+            }
         }
     }
 
@@ -33,6 +52,6 @@ public class TitleScreentoMenu : MonoBehaviour {
         mainMenu.SetActive(true);
 
         //play menu music
-        musicComponent.playMusic();
+        musicComponent.playMusic(MusicTrack.MainMenu);
     }
 }

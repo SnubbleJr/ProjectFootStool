@@ -15,10 +15,13 @@ public class HillTriggerScript : MonoBehaviour {
     void OnTriggerEnter2D(Collider2D collider)
     {
         //play sound, depending if if we are contested
-        if ((getTeamsInHill().Length > 0) || (getPlayersInHill().Length > 0))
+        if ((getTeamsInHill().Count > 0) || (getPlayersInHill().Count > 0))
             SFXManagerBehaviour.Instance.playSound(hillContested);
         else
             SFXManagerBehaviour.Instance.playSound(hillEnter);
+
+        if (!playersInHill.Contains(collider.gameObject))
+            playersInHill.Add(collider.gameObject);
     }
 
     void OnTriggerExit2D(Collider2D collider)
@@ -27,14 +30,7 @@ public class HillTriggerScript : MonoBehaviour {
 
         playersInHill.Remove(collider.gameObject);
     }
-
-    //add if not already in
-    void OnTriggerStay2D(Collider2D other)
-    {
-        if (!playersInHill.Contains(other.gameObject))
-            playersInHill.Add(other.gameObject);
-    }
-
+    
     void OnEnable()
     {
         playersInHill = new List<GameObject>();
@@ -45,18 +41,12 @@ public class HillTriggerScript : MonoBehaviour {
         playersInHill = new List<GameObject>();
     }
 
-    void FixedUpdate()
+    public List<GameObject> getPlayersInHill()
     {
-        //clear it out every frame
-        playersInHill.Clear();
+        return playersInHill;
     }
 
-    public GameObject[] getPlayersInHill()
-    {
-        return playersInHill.ToArray();
-    }
-
-    public GameObject[] getTeamsInHill()
+    public List<GameObject> getTeamsInHill()
     {
         List<GameObject> teamsInHill = new List<GameObject>();
         int lastTeam = 0;
@@ -72,6 +62,15 @@ public class HillTriggerScript : MonoBehaviour {
             }
         }
 
-        return teamsInHill.ToArray();
+        return teamsInHill;
+    }
+
+    public void removePlayerFromIn(PlayerControl player)
+    {
+        if (playersInHill.Contains(player.gameObject))
+        {
+            playersInHill.Remove(player.gameObject);
+            SFXManagerBehaviour.Instance.playSound(hillExit);
+        }
     }
 }

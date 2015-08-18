@@ -60,6 +60,8 @@ public class PlayerStatsDisplayer : MonoBehaviour {
 
         List<PlayerStatsPanel> boards = new List<PlayerStatsPanel>();
 
+        int winner = manager.getWinner();
+
         //builds ui for each player
         for (int i = 0; i < playerStats.Length; i++)
         {
@@ -86,8 +88,16 @@ public class PlayerStatsDisplayer : MonoBehaviour {
 
             int bulliedInt = findPlayerStats(playerStats, playerStats[i].getBullied());
             int bullyInt = findPlayerStats(playerStats, playerStats[i].getBully());
-            
-            boardStats.setStats(players[i], playerStats[i], players[bulliedInt], players[bullyInt]);
+
+            if (bulliedInt < 0)
+                bulliedInt = i;
+
+            if (bullyInt < 0)
+                bullyInt = i;
+
+            bool won = winner == (i + 1);
+
+            boardStats.setStats(players[i], playerStats[i], won, players[bulliedInt], players[bullyInt]);
         }
 
         statBoards = boards.ToArray();
@@ -100,7 +110,7 @@ public class PlayerStatsDisplayer : MonoBehaviour {
         for (int i = 0; i < playerStats.Length; i++)
             if (playerStats[i].id == id)
                 return i;
-        return 0;
+        return -1;
     }
 
     private void animatePanels()

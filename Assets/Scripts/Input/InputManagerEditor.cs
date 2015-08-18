@@ -94,7 +94,8 @@ public class InputManagerEditor : MonoBehaviour {
         Cancel = 1,
         Pause = 7,
         SplitControl1 = 7,
-        SplitControl2 = 6
+        SplitControl2 = 6,
+        StartGame = 7
     }
 
     public enum ControllerLeftHalfAxisDef
@@ -111,7 +112,8 @@ public class InputManagerEditor : MonoBehaviour {
         ChangeMode = 8,
         Submit = 4,
         Pause = 6,
-        JoinControl = 6
+        JoinControl = 6,
+        StartGame = 6
     }
 
     public enum ControllerRightHalfAxisDef
@@ -128,7 +130,8 @@ public class InputManagerEditor : MonoBehaviour {
         ChangeMode = 9,
         Submit = 5,
         Pause = 7,
-        JoinControl = 7
+        JoinControl = 7,
+        StartGame = 7
     }
 
     private static void AddAxis(InputAxis axis)
@@ -176,16 +179,16 @@ public class InputManagerEditor : MonoBehaviour {
         AddAxis(new InputAxis() { name = "Mouse X", gravity = 3, dead = 0.19f, sensitivity = 3, snap = true, type = AxisType.MouseMovement, axis = 1 });
         AddAxis(new InputAxis() { name = "Mouse Y", gravity = 3, dead = 0.19f, sensitivity = 3, snap = true, type = AxisType.MouseMovement, axis = 2 });
 
-        SetupKeyBoardControlls(1, "a", "d", "w", "s", "e", "q", "x", "escape");
-        SetupKeyBoardControlls(2, "left", "right", "up", "down", "page down", "delete", "end", "escape");
-        SetupKeyBoardControlls(3, "u", "o", "8", "i", "9", "7", "k", "escape");
-        SetupKeyBoardControlls(4, "v", "n", "g", "b", "h", "f", "m", "escape");
+        SetupKeyBoardControlls(1, "a", "d", "w", "s", "e", "q", "x", "escape", "space");
+        SetupKeyBoardControlls(2, "left", "right", "up", "down", "page down", "delete", "end", "escape", "space");
+        SetupKeyBoardControlls(3, "u", "o", "8", "i", "9", "7", "k", "escape", "space");
+        SetupKeyBoardControlls(4, "v", "n", "g", "b", "h", "f", "m", "escape", "space");
 
         SetupNonSharedControllers();
         SetupSharedControllers();
     }
 
-    private static void SetupKeyBoardControlls(int index, string left, string right, string up, string down, string submit, string cancel, string changeMode, string pause)
+    private static void SetupKeyBoardControlls(int index, string left, string right, string up, string down, string submit, string cancel, string changeMode, string pause, string startGame)
     {
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Horizontal", descriptiveName = "Menu navagation only", negativeButton = left, positiveButton = right, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Vertical", descriptiveName = "Menu navagation only", negativeButton = down, positiveButton = up, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
@@ -197,6 +200,7 @@ public class InputManagerEditor : MonoBehaviour {
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Cancel", positiveButton = cancel, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " ChangeMode", positiveButton = changeMode, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Pause", positiveButton = pause, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
+        AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " StartGame", positiveButton = startGame, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
 
     }
     
@@ -217,14 +221,11 @@ public class InputManagerEditor : MonoBehaviour {
             type = AxisType.JoystickAxis,
             axis = axisNo,
             joyNum = id,
+            invert = invert
         };
 
         try
         {
-            if (invert)
-                if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.Vertical)
-                    inputAxis.invert = true;
-
             if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.Flump)
             {
                 inputAxis.dead = 0.19f;
@@ -261,7 +262,10 @@ public class InputManagerEditor : MonoBehaviour {
             foreach (string axisName in Enum.GetNames(typeof(ControllerAxisDef)))
             {
                 ControllerAxisDef axis = (ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName, true);
-                AddAxis(createInputAxis("Controller ", i, " ", axisName, (int)axis));
+                if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.Vertical)
+                    AddAxis(createInputAxis("Controller ", i, " ", axisName, (int)axis, true));
+                else
+                    AddAxis(createInputAxis("Controller ", i, " ", axisName, (int)axis));
             }
 
             //alternernate axis - we don't try invert
@@ -290,7 +294,10 @@ public class InputManagerEditor : MonoBehaviour {
             foreach (string axisName in Enum.GetNames(typeof(ControllerLeftHalfAxisDef)))
             {
                 ControllerLeftHalfAxisDef axis = (ControllerLeftHalfAxisDef)Enum.Parse(typeof(ControllerLeftHalfAxisDef), axisName, true);
-                AddAxis(createInputAxis("Controller ", i, " left side ", axisName, (int)axis));
+                if ((ControllerLeftHalfAxisDef)Enum.Parse(typeof(ControllerLeftHalfAxisDef), axisName) == ControllerLeftHalfAxisDef.Vertical)
+                    AddAxis(createInputAxis("Controller ", i, " left side ", axisName, (int)axis, true));
+                else
+                    AddAxis(createInputAxis("Controller ", i, " left side ", axisName, (int)axis));
             }
 
             //buttons
@@ -305,7 +312,10 @@ public class InputManagerEditor : MonoBehaviour {
             foreach (string axisName in Enum.GetNames(typeof(ControllerRightHalfAxisDef)))
             {
                 ControllerRightHalfAxisDef axis = (ControllerRightHalfAxisDef)Enum.Parse(typeof(ControllerRightHalfAxisDef), axisName, true);
-                AddAxis(createInputAxis("Controller ", i, " right side ", axisName, (int)axis));
+                if ((ControllerRightHalfAxisDef)Enum.Parse(typeof(ControllerRightHalfAxisDef), axisName) == ControllerRightHalfAxisDef.Vertical)
+                AddAxis(createInputAxis("Controller ", i, " right side ", axisName, (int)axis, true));
+                else
+                    AddAxis(createInputAxis("Controller ", i, " right side ", axisName, (int)axis));
             }
 
             //buttons

@@ -4,7 +4,7 @@ using System.Collections;
 
 public class MusicManagerBehaviour : MonoBehaviour {
 
-    public AudioSource menuMusic, playerSelectionMusic, stockMusic, kothMusic, raceMusic;
+    public AudioSource menuMusic, playerSelectionMusic, stockMusic, kothMusic, raceMusic, customMusic;
 
     private AudioMixer masterMixer;
     private MusicTrack currentTrack;
@@ -13,6 +13,13 @@ public class MusicManagerBehaviour : MonoBehaviour {
     private float lowPassCutoffMax = 22000;
     private float lowPassCutoffMin = 400;
     private float currentLowPass;
+
+    private float reverbMax = 0;
+    private float reverbMin = -10000;
+    private float currentReverb ;
+        
+    private bool paused = false;
+    private bool gameOver = false;
 
     private const float invokeInterval = 0.02f;
 
@@ -46,6 +53,7 @@ public class MusicManagerBehaviour : MonoBehaviour {
 	void Awake ()
     {
         currentLowPass = lowPassCutoffMax;
+        currentReverb = reverbMax;
 
         BeatDetector.beatDetected += beatDetected;
         MusicVolumeSliderElement.volumeChanged += volumeChanged;
@@ -55,6 +63,7 @@ public class MusicManagerBehaviour : MonoBehaviour {
     void Update()
     {
         lowPasser();
+        reverber();
         alterLayer();
     }
 
@@ -66,10 +75,10 @@ public class MusicManagerBehaviour : MonoBehaviour {
 
     private void lowPasser()
     {
-        float speed = 3f;
+        float speed = 1f;
 
         //if paused
-        if (Time.timeScale == 0)
+        if (paused)
             if ((currentLowPass * 0.9f) > lowPassCutoffMin)
                 currentLowPass = Mathf.Lerp(currentLowPass, lowPassCutoffMin, speed * Time.unscaledDeltaTime);
             else
@@ -81,6 +90,26 @@ public class MusicManagerBehaviour : MonoBehaviour {
                 currentLowPass = lowPassCutoffMax;
 
         masterMixer.SetFloat("musicLowPassCuttoff", currentLowPass);
+    }
+
+    private void reverber()
+    {
+        float speed = 3f;
+
+        if (gameOver)
+            if ((currentReverb * 0.9f) > reverbMin)
+                currentReverb = Mathf.Lerp(currentReverb, reverbMin, speed * Time.unscaledDeltaTime);
+            else
+                currentReverb = reverbMin;
+        else
+            if (currentReverb < (lowPassCutoffMax * 0.9f))
+                currentReverb = Mathf.Lerp(currentReverb, reverbMax, speed * Time.unscaledDeltaTime);
+            else
+                currentReverb = reverbMax;
+
+        masterMixer.SetFloat("dryLevel", currentReverb);
+        masterMixer.SetFloat("roomHF", (reverbMin + reverbMax) - currentReverb);
+        masterMixer.SetFloat("room", (reverbMin + reverbMax) - currentReverb);
     }
 
     private void addLayer(AudioSource layer)
@@ -135,40 +164,63 @@ public class MusicManagerBehaviour : MonoBehaviour {
         switch (musicTrack)
         {
             case MusicTrack.MainMenu:
-                //if we're already playing the menu music (i.e. we're coming from playerselection)
-                if (menuMusic.isPlaying)
-                    //fade out hype layer
-                    removeLayer(playerSelectionMusic);
-                else
+                if (menuMusic != null)
                 {
-                    playMusic(menuMusic);
-                    //load up the 2nd layer in the background
-                    loadLayer(playerSelectionMusic, playerSelectionMusic);
+                    //if we're already playing the menu music (i.e. we're coming from playerselection)
+                    if (menuMusic.isPlaying)
+                        //fade out hype layer
+                        removeLayer(playerSelectionMusic);
+                    else
+                    {
+                        playMusic(menuMusic);
+                        //load up the 2nd layer in the background
+                        loadLayer(playerSelectionMusic, playerSelectionMusic);
+                    }
                 }
                 break;
             case MusicTrack.PlayerSelectionMenu:
-                //if we're not coming from the menu
-                if (!menuMusic.isPlaying)
+                if (menuMusic != null)
                 {
-                    playMusic(menuMusic);
-                    //load up the 2nd layer in the background
-                    loadLayer(playerSelectionMusic, playerSelectionMusic);
+                    //if we're not coming from the menu
+                    if (!menuMusic.isPlaying)
+                    {
+                        playMusic(menuMusic);
+                        //load up the 2nd layer in the background
+                        loadLayer(playerSelectionMusic, playerSelectionMusic);
+                    }
+                    //load up the 2nd layer for fading in
+                    addLayer(playerSelectionMusic);
                 }
-                //load up the 2nd layer for fading in
-                addLayer(playerSelectionMusic);
                 break;
             case MusicTrack.StockGame:
-                playMusic(stockMusic);
+                if (stockMusic != null)
+                    playMusic(stockMusic);
                 break;
             case MusicTrack.KothGame:
-                playMusic(kothMusic);
+                if (kothMusic != null)
+                    playMusic(kothMusic);
                 break;
             case MusicTrack.RaceGame:
-                playMusic(raceMusic);
+                if (raceMusic != null)
+                    playMusic(raceMusic);
+                break;
+            case MusicTrack.Custom:
+                if (customMusic != null)
+                playMusic(customMusic);
+                break;
+            default:
                 break;
         }
 
         currentTrack = musicTrack;
+    }
+
+    public void playMusic(MusicTrack musicTrack, AudioClip customTrack)
+    {
+        if (musicTrack == MusicTrack.Custom)
+            customMusic.clip = customTrack;
+
+        playMusic(musicTrack);
     }
 
     private void playMusic(AudioSource audioSource)
@@ -217,5 +269,29 @@ public class MusicManagerBehaviour : MonoBehaviour {
     public AudioSource getPlayingMusic()
     {
         return currentSource;
+    }
+
+    public void setPaused(bool val)
+    {
+        paused = val;
+    }
+
+    public void setGameOver(bool val)
+    {
+        gameOver = val;
+
+        //this is so we get an instant jump
+        if (gameOver)
+        {
+            reverbMin = -9000;
+            reverbMax = -1000;
+        }
+        else
+        {
+            reverbMin = -10000;
+            reverbMax = 0;
+        }
+
+        currentReverb = reverbMax;
     }
 }

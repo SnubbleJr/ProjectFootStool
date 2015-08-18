@@ -18,5 +18,10 @@
     Countdown,
     Go,
     PointAdded,
+    PanelArriving,
+    PanelArrived1,
+    PanelArrived2,
+    PanelLeaving,
+    PanelLeft,
     None
 };

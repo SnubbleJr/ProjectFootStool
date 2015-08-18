@@ -41,6 +41,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     private bool displayWinner = false;
     private int countDownStart = 5;
     private int countDownTime;
+    private bool countingDown = false;
     
 	// Use this for initialization
     void Awake()
@@ -61,17 +62,19 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     {
         InputManagerBehaviour.playerAdded += playerAdded;
         InputManagerBehaviour.playerRemoved += playerRemoved;
+        BeatDetector.beatDetected += countDown;
     }
 
     void OnDisable()
     {
         InputManagerBehaviour.playerAdded -= playerAdded;
         InputManagerBehaviour.playerRemoved -= playerRemoved;
+        BeatDetector.beatDetected -= countDown;
     }
 
     public void startGame(Player[] Players, GameMode mode, bool teamMode, int scoreAmount)
     {
-        spawnPointHolders = GameObject.FindGameObjectsWithTag("SpawnPoints");
+        spawnPointHolders = SpawnPointGenerator.Instance.getSpawnPointHolders();
 
         if (spawnPointHolders.Length <= 0)
             UnityEngine.Debug.LogError("Cannot find spawn points under player manager!");
@@ -107,8 +110,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         //reseting values
         Time.timeScale = 1;
         countDownTime = countDownStart;
-        CancelInvoke("countDown");
-        InvokeRepeating("countDown", 0, Time.timeScale/2f);
+        countingDown = true;
         foreach (GameObject obj in changingColorObjects)
             obj.SendMessage("startFade");
 
@@ -233,32 +235,35 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         gameMode.setColors(playerColors);
     }
 
-    private void countDown()
+    private void countDown(bool onBeat)
     {
-        //countdown to 0
-        if (countDownTime > 0)
+        if (countingDown)
         {
-            SFXManagerBehaviour.Instance.playSound(countDownSound);
-            countDownTime--;
-        }
-        else
-        {
-            //wehen hit 0, set to -1 so go on screen disapears
-            countDownTime = -1;
-            CancelInvoke("countdown");
-        }
-
-        //checked at 0, so players are active on go
-        if (countDownTime == 0)
-        {
-            SFXManagerBehaviour.Instance.playSound(countDownGoSound);
-
-            mainCamera.startedGame = true;
-
-            foreach (PlayerControl playerControl in playerControls)
+            //countdown to 0
+            if (countDownTime > 0)
             {
-                if(playerControl)
-                    playerControl.enabled = true;
+                SFXManagerBehaviour.Instance.playSound(countDownSound);
+                countDownTime--;
+            }
+            else
+            {
+                //wehen hit 0, set to -1 so go on screen disapears
+                countDownTime = -1;
+                countingDown = false;
+            }
+
+            //checked at 0, so players are active on go
+            if (countDownTime == 0)
+            {
+                SFXManagerBehaviour.Instance.playSound(countDownGoSound);
+
+                mainCamera.startedGame = true;
+
+                foreach (PlayerControl playerControl in playerControls)
+                {
+                    if (playerControl)
+                        playerControl.enabled = true;
+                }
             }
         }
     }
@@ -404,13 +409,16 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
     private void respawnPlayer(int i)
     {
-        //don't respawn if stock game and no stocks
-        //so only respawn if more than 1 stock or not playing stock game
-        if (playerControls[i].getScore() > 0 || stockGame.enabled == false)
+        if (!gameOver)
         {
-            players[i].transform.position = spawns[i].position;
-            playerControls[i].enabled = true;
-            playerControls[i].respawn();
+            //don't respawn if stock game and no stocks
+            //so only respawn if more than 1 stock or not playing stock game
+            if (playerControls[i].getScore() > 0 || stockGame.enabled == false)
+            {
+                players[i].transform.position = spawns[i].position;
+                playerControls[i].enabled = true;
+                playerControls[i].respawn();
+            }
         }
     }
     
@@ -423,11 +431,22 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
     private void endMatch()
     {
-        SFXManagerBehaviour.Instance.stopAllLoops();
+        LevelManagerBehaviour.Instance.resetLevels();
+
+        try
+        {
+            SFXManagerBehaviour.Instance.stopAllLoops();
+        }
+        catch
+        {
+        }
+        MusicManagerBehaviour.Instance.setGameOver(true);
+
+        foreach (GameObject player in players)
+            Destroy(player);
 
         //disable countdown incase it was still showing
         countDownTime = -1;
-        countDown();
 
         gameOver = true;
 
@@ -486,8 +505,6 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         //temp measure
         mainCamera.resetZoom();
         
-        winner = 0;
-
         displayResults();
     }
 
@@ -505,19 +522,14 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
     private void finishMatch()
     {
-        foreach (GameObject player in players)
-        {
-            Destroy(player);
-        }
+        MusicManagerBehaviour.Instance.setGameOver(false);
 
         GameObject.Find("Menu Manager").GetComponent<MainMenuScript>().exitLevel();
 
         Camera.main.gameObject.SendMessage("setFade", false);
 
         foreach (GameObject obj in fadingColorObjects)
-        {
             obj.SendMessage("setFade", false, SendMessageOptions.DontRequireReceiver);
-        }
 
         GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
         foreach (GameObject obj in changingColorObjects)
@@ -527,5 +539,10 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     public PlayerStats[] getStats()
     {
         return playerStats;
+    }
+
+    public int getWinner()
+    {
+        return winner;
     }
 }

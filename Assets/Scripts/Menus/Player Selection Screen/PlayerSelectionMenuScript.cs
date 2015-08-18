@@ -56,7 +56,7 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
     private void buttonPressed(PlayerInputScheme player, string input, float value)
     {
         //quit out if no one is in selecter
-        if (input == "Cancel" && getActivePlayers().Length == 0)
+        if (input == player.inputs[PlayerInput.CancelInput].shortName && getActivePlayers().Length == 0)
         {
             playerSelectionManager.SetActive(false);
             this.enabled = false;
@@ -68,12 +68,13 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         //don't let someone else start the game unless they're active
         bool validPlayer = false;
         Player[] readyPlayers = getReadyPlayers();
-        foreach (Player readyRlayer in readyPlayers)
-            if (readyRlayer.playerNo == player.id)
+        foreach (Player readyPlayer in readyPlayers)
+            if (readyPlayer.playerInputScheme.id == player.id)
                 validPlayer = true;
 
-        if (input == "Submit" && allReady && validPlayer)
-            mainMenu.startGame();
+        if (input == player.inputs[PlayerInput.SubmitInput].shortName || input == player.inputs[PlayerInput.StartGameInput].shortName)
+            if (allReady && validPlayer)
+                mainMenu.startGame();
     }
 
     private bool checkReady()

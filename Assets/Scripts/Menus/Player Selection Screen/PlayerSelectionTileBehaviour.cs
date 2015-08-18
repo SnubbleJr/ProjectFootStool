@@ -8,38 +8,14 @@ public class PlayerSelectionTileBehaviour : MonoBehaviour {
     private PlayerColor pColor;
     private PlayerSprite pSprite;
 
-    private float alpha;
+    //private float alpha;
 
     private SpriteRenderer spriteRenderer;
 
 	// Use this for initialization
-	void Start ()
+	void Awake ()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-	}
-	
-    void OnGUI()
-    {
-        
-    }
-
-	// Update is called once per frame
-	void Update ()
-    {
-        if (pColor != null)
-            spriteRenderer.color = pColor.color;
-
-        if (pSprite != null)
-            spriteRenderer.sprite = pSprite.sprite;
-
-        Color aColor = spriteRenderer.color;
-        aColor.a = alpha;
-        spriteRenderer.color = aColor;
-        /*
-        if (selected)
-        {
-        }
-        */
 	}
 
     public void setSelected(bool value)
@@ -55,6 +31,9 @@ public class PlayerSelectionTileBehaviour : MonoBehaviour {
     public void setColor(PlayerColor color)
     {
         pColor = color;
+
+        if (pColor != null)
+            spriteRenderer.color = pColor.color;
     }
 
     public PlayerColor getColor()
@@ -62,14 +41,23 @@ public class PlayerSelectionTileBehaviour : MonoBehaviour {
         return pColor;
     }
 
-    public void setAlpha(float talpha)
+    public void setAlpha(float alpha)
     {
-        alpha = talpha;
+        if (alpha == 0)
+            spriteRenderer.enabled = false;
+        else
+        {
+            spriteRenderer.enabled = true;
+            Color aColor = spriteRenderer.color;
+            aColor.a = alpha;
+            spriteRenderer.color = aColor;
+        }
     }
 
     public void setSprite(PlayerSprite sprite)
     {
         pSprite = sprite;
+        spriteRenderer.sprite = pSprite.sprite;
     }
 
     public PlayerSprite getSprite()

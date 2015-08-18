@@ -82,9 +82,9 @@ public class PlayerControl : MonoBehaviour {
     private string leftKey;
     private string downKey;
 
-    private Color color;
+    private Player player;
 
-    private GameObject sprite;
+    private GameObject spriteGO;
     private SpriteRenderer spriteRenderer;
 
     private Animator anim;
@@ -124,29 +124,23 @@ public class PlayerControl : MonoBehaviour {
         sideCheckTopRight = sideCheckRight.transform.FindChild("SideCheckRU");
         sideCheckBottomRight = sideCheckRight.transform.FindChild("SideCheckRL");
 
-        sprite = transform.FindChild("Sprite").gameObject;
+        spriteGO = transform.FindChild("Sprite").gameObject;
 
         viewingCamera = GameObject.Find("Viewing Camera");
 
-        if (groundCheck == null || headCheck == null || sideCheckLeft == null || sideCheckRight == null || sprite == null)
+        if (groundCheck == null || headCheck == null || sideCheckLeft == null || sideCheckRight == null || spriteGO == null)
         {
             UnityEngine.Debug.LogError("Can't find ground or head or side checks or sprite child!");
             this.enabled = false;
         }
-
-        if (jumpSound == null || dJumpSound == null || deathSound == null)
-        {
-            UnityEngine.Debug.LogError("Sounds have not been given!");
-            this.enabled = false;
-        }
-
+        
         if (viewingCamera == null)
         {
             UnityEngine.Debug.LogError("No viewing camera found!");
             this.enabled = false;
         }
 
-        spriteRenderer = sprite.GetComponent<SpriteRenderer>();
+        spriteRenderer = spriteGO.GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
         groundParticleSystem = groundCheck.GetComponentInChildren<ParticleSystem>();
         wallLeftParticleSystem = sideCheckLeft.GetComponentInChildren<ParticleSystem>();
@@ -154,6 +148,18 @@ public class PlayerControl : MonoBehaviour {
 
         groundLayerMask = 1 << LayerMask.NameToLayer("Ground");
 	}
+
+    void OnDestroy()
+    {
+        try
+        {
+            SFXManagerBehaviour.Instance.stopLoop(this.gameObject, wallSlidingSound);
+            SFXManagerBehaviour.Instance.stopLoop(this.gameObject, fallingSound);
+        }
+        catch
+        {
+        }
+    }
 
 	void Update ()
     {
@@ -542,12 +548,12 @@ public class PlayerControl : MonoBehaviour {
     public void invertColors()
     {
         //invert color
-        color = (new Color(1 - color.r, 1 - color.g, 1 - color.b, 1));
+        player.color.color = (new Color(1 - player.color.color.r, 1 - player.color.color.g, 1 - player.color.color.b, 1));
 
-        spriteRenderer.color = color;
-        groundParticleSystem.startColor = color;
-        wallLeftParticleSystem.startColor = color;
-        wallRightParticleSystem.startColor = color;
+        spriteRenderer.color = player.color.color;
+        groundParticleSystem.startColor = player.color.color;
+        wallLeftParticleSystem.startColor = player.color.color;
+        wallRightParticleSystem.startColor = player.color.color;
     }
 
     public int getPlayerNo()
@@ -560,18 +566,23 @@ public class PlayerControl : MonoBehaviour {
         return teamNo;
     }
 
-    public void setPlayer(Player player, List<int> opponentNumbers)
-    {        
-        color = player.color.color;
-        color.a = 1;
-        spriteRenderer.color = color;
-        spriteRenderer.sprite = player.sprite.sprite;
-        groundParticleSystem.startColor = color;
-        wallLeftParticleSystem.startColor = color;
-        wallRightParticleSystem.startColor = color;
+    public Player getPlayer()
+    {
+        return player;
+    }
 
-        playerNo = player.playerNo;
-        teamNo = player.teamNo;
+    public void setPlayer(Player plyer, List<int> opponentNumbers)
+    {
+        player = plyer;
+        player.color.color.a = 1;
+        spriteRenderer.color = player.color.color;
+        spriteRenderer.sprite = player.sprite.sprite;
+        groundParticleSystem.startColor = player.color.color;
+        wallLeftParticleSystem.startColor = player.color.color;
+        wallRightParticleSystem.startColor = player.color.color;
+
+        playerNo = plyer.playerNo;
+        teamNo = plyer.teamNo;
 
         //set our layermask
         this.gameObject.layer = LayerMask.NameToLayer("Player " + teamNo);
@@ -583,14 +594,14 @@ public class PlayerControl : MonoBehaviour {
             setLayerMask("Player " + opponentNumber.ToString());
 
         //set up the inputs for this player
-        horizontalAxis = player.inputs[PlayerInput.HorizontalInput].inputName;
-        jumpKey = player.inputs[PlayerInput.UpInput].inputName;
-        downKey = player.inputs[PlayerInput.DownInput].inputName;
+        horizontalAxis = plyer.playerInputScheme.inputs[PlayerInput.HorizontalInput].inputName;
+        jumpKey = plyer.playerInputScheme.inputs[PlayerInput.UpInput].inputName;
+        downKey = plyer.playerInputScheme.inputs[PlayerInput.DownInput].inputName;
 
-        if (player.inputs.ContainsKey(PlayerInput.RightInput) && player.inputs.ContainsKey(PlayerInput.LeftInput))
+        if (plyer.playerInputScheme.inputs.ContainsKey(PlayerInput.RightInput) && plyer.playerInputScheme.inputs.ContainsKey(PlayerInput.LeftInput))
         {
-            rightKey = player.inputs[PlayerInput.RightInput].inputName;
-            leftKey = player.inputs[PlayerInput.LeftInput].inputName;
+            rightKey = plyer.playerInputScheme.inputs[PlayerInput.RightInput].inputName;
+            leftKey = plyer.playerInputScheme.inputs[PlayerInput.LeftInput].inputName;
             keyboard = true;
         }
     }
@@ -638,12 +649,17 @@ public class PlayerControl : MonoBehaviour {
 
     public Color getColor()
     {
-        return color;
+        return player.color.color;
     }
 
     public Sprite getSprite()
     {
-        return spriteRenderer.sprite;
+        return player.sprite.sprite;
+    }
+
+    public bool getHit()
+    {
+        return hit;
     }
 }
 

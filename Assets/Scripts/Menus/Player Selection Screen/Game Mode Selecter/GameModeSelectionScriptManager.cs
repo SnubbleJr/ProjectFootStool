@@ -28,7 +28,7 @@ public class GameModeSelectionScriptManager : MonoBehaviour {
     private void buttonPressed(PlayerInputScheme player, string input, float value)
     {
         //quit out if no one is in selecter
-        if (input == "ChangeMode")
+        if (input == player.inputs[PlayerInput.ChangeModeInput].shortName)
             activateSelecter(player);
     }
 

@@ -49,7 +49,7 @@ public class Player
     public int teamNo;
     public PlayerSprite sprite;
     public PlayerColor color;
-    public Dictionary<PlayerInput, InputAxisAndButtons> inputs;
+    public PlayerInputScheme playerInputScheme;
 }
 
 public class PlayerSelectionScriptManager : MonoBehaviour 
@@ -113,12 +113,16 @@ public class PlayerSelectionScriptManager : MonoBehaviour
     {
         InputManagerBehaviour.playerAdded += createPlayerSelecter;
         InputManagerBehaviour.playerRemoved += deletePlayerSelecter;
+        InputManagerBehaviour.buttonPressed += buttonDetected;
+        InputManagerBehaviour.axisPressed += axisDetected;
     }
 
     void OnDisable()
     {
         InputManagerBehaviour.playerAdded -= createPlayerSelecter;
         InputManagerBehaviour.playerRemoved -= deletePlayerSelecter;
+        InputManagerBehaviour.buttonPressed -= buttonDetected;
+        InputManagerBehaviour.axisPressed -= axisDetected;
     }
 
     private void createPlayerSelecters()
@@ -242,7 +246,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
             rowCounter++;
 
             //if controller full, add it to the row so we count it as a game object to move
-            if (playerSelecter.getPlayer().inputType == InputType.ControllerFull)
+            if (playerSelecter.getPlayerInputScheme().inputType == InputType.ControllerFull)
             {
                 row.Add(joinCanvases[playerSelecter]);
                 rowCounter++;
@@ -306,6 +310,20 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         updatePlayerSelectersPos();
     }
 
+    public void buttonDetected(PlayerInputScheme player, string inputName, float value)
+    {
+        foreach (KeyValuePair<int, PlayerSelectionScript> pair in playerSelecters)
+            if (player.id == pair.Value.getPlayerInputSchemeId())
+                pair.Value.buttonDetected(player, inputName, value);
+    }
+
+    public void axisDetected(PlayerInputScheme player, string inputName, float value)
+    {
+        foreach (KeyValuePair<int, PlayerSelectionScript> pair in playerSelecters)
+            if (player.id == pair.Value.getPlayerInputSchemeId())
+                pair.Value.axisDetected(player, inputName, value);
+    }
+
     private void updatePlayerNos()
     {
         //update player selecters playerNo based on the order it is in the dict
@@ -342,7 +360,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
                 player.color = playerSelectionScript.getColor();
                 player.playerNo = playerSelectionScript.getPlayerNo();
                 player.teamNo = playerSelectionScript.getTeam();
-                player.inputs = playerSelectionScript.getPlayer().inputs;
+                player.playerInputScheme = playerSelectionScript.getPlayerInputScheme();
                 players.Add(player);
             }
         }
@@ -368,7 +386,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
                 player.color = playerSelectionScript.getColor();
                 player.playerNo = playerSelectionScript.getPlayerNo();
                 player.teamNo = playerSelectionScript.getTeam();
-                player.inputs = playerSelectionScript.getPlayer().inputs;
+                player.playerInputScheme = playerSelectionScript.getPlayerInputScheme();
                 players.Add(player);
             }
         }

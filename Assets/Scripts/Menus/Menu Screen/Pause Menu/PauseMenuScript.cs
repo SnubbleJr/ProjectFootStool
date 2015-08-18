@@ -75,7 +75,7 @@ public class PauseMenuScript : MonoBehaviour {
         }
 
         lockedInPause = playerDCd;
-        dcInfoText.SendMessage("setText", str);
+        dcInfoText.GetComponent<UITextScript>().setText(str);
     }
 
     private string printDisconnectedPlayers()
@@ -104,7 +104,7 @@ public class PauseMenuScript : MonoBehaviour {
     private void buttonPressed(PlayerInputScheme player, string input, float value)
     {
         //if escape hit
-        if (input == "Pause")
+        if (input == player.inputs[PlayerInput.PauseInput].shortName)
             //if already active
             if (!lockedInPause)
                 //toggle menu
@@ -117,22 +117,17 @@ public class PauseMenuScript : MonoBehaviour {
             {
                 pause();
 
-                switch (input)
-                {
-                    case "Cancel":
-                        if (!lockedInPause)
-                            active = false;
-                        break;
-                    case "ChangeMode":
-                        askConfirmation(PauseOption.exitMatch);
-                        break;
-                    case "Submit":
-                        askConfirmation(PauseOption.exitGame);
-                        break;
-                }
+                if (input == player.inputs[PlayerInput.CancelInput].shortName && !lockedInPause)
+                    active = false;
+
+                if (input == player.inputs[PlayerInput.ChangeModeInput].shortName)
+                    askConfirmation(PauseOption.exitMatch);
+
+                if (input == player.inputs[PlayerInput.SubmitInput].shortName)
+                    askConfirmation(PauseOption.exitGame);
             }
         }
-        
+
         if (!active)
             //close menus
             unpause();
@@ -149,6 +144,9 @@ public class PauseMenuScript : MonoBehaviour {
 
         //show menu
         pauseCanvas.SetActive(true);
+
+        //informm music manager
+        MusicManagerBehaviour.Instance.setPaused(true);
     }
 
     private void unpause()
@@ -164,6 +162,9 @@ public class PauseMenuScript : MonoBehaviour {
         lockedInPause = false;
 
         Time.timeScale = previousTimeScale;
+
+        //informm music manager
+        MusicManagerBehaviour.Instance.setPaused(false);
     }
 
     private void askConfirmation(PauseOption option)

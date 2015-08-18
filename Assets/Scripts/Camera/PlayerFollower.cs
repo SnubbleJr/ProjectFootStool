@@ -82,10 +82,16 @@ public class PlayerFollower : MonoBehaviour {
             //check if someone is out of bounds
             foreach (GameObject player in players)
             {
-                if (player.GetComponent<PlayerControl>().enabled == true || !startedGame)
+                try
                 {
-                    inMin = minRect.Contains(camera.WorldToViewportPoint(player.transform.position)) && inMin;
-                    inMax = maxRect.Contains(camera.WorldToViewportPoint(player.transform.position)) && inMax;
+                    if (player.GetComponent<PlayerControl>().enabled || !startedGame)
+                    {
+                        inMin = minRect.Contains(camera.WorldToViewportPoint(player.transform.position)) && inMin;
+                        inMax = maxRect.Contains(camera.WorldToViewportPoint(player.transform.position)) && inMax;
+                    }
+                }
+                catch
+                {
                 }
             }
 
@@ -103,19 +109,32 @@ public class PlayerFollower : MonoBehaviour {
 
             foreach (GameObject player in players)
             {
-                if (player.GetComponent<PlayerControl>().enabled == true || !startedGame)
+                try
                 {
-                    midPoint += player.transform.position;
-                    numActivePlayers++;
+                    if (player.GetComponent<PlayerControl>().enabled == true || !startedGame)
+                    {
+                        midPoint += player.transform.position;
+                        numActivePlayers++;
+                    }
+                }
+                catch
+                {
                 }
             }
 
-            midPoint = midPoint / numActivePlayers;
+            try
+            {
+                if (numActivePlayers > 0)
+                    midPoint = midPoint / numActivePlayers;
 
-            midPoint.y += height;
-            midPoint.z = transform.position.z;
+                midPoint.y += height;
+                midPoint.z = transform.position.z;
 
-            transform.position = Vector3.Lerp(transform.position, midPoint, zoomSpeed * 3 * Time.deltaTime);
+                transform.position = Vector3.Lerp(transform.position, midPoint, zoomSpeed * 3 * Time.deltaTime);
+            }
+            catch
+            {
+            }
         }
 
         Time.fixedDeltaTime = 0.02F * Time.timeScale;

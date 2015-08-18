@@ -9,7 +9,7 @@ public class HillActivationScript : MonoBehaviour {
     private BoxCollider2D bc2D;
     private SpriteRenderer sr;
 
-    void Start()
+    void Awake()
     {
         bc2D = GetComponent<BoxCollider2D>();
         sr = GetComponent<SpriteRenderer>();

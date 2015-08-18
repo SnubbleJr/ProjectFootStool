@@ -39,12 +39,20 @@ public class PlayerStats
 
     public int getBullied()
     {
-        return getMode(KOs);
+        int mode = getMode(KOs);
+        if (mode <= 0)
+            return -1;
+        else
+            return mode;
     }
 
     public int getBully()
     {
-        return getMode(TKOs);
+        int mode = getMode(TKOs);
+        if (mode <= 0)
+            return -1;
+        else
+            return mode;
     }
 
     public int getSDs()
@@ -63,7 +71,7 @@ public class PlayerStats
 
 public class PlayerState
 {
-    public int id;
+    public Player player;
     public bool ready;
 }
 
@@ -118,7 +126,7 @@ public class PlayerStatsManagerBehaviour : MonoBehaviour {
     {
         if (playerStates != null)
             for (int i = 0; i < playerStates.Length; i++)
-                if (playerStates[i].id == id)
+                if (playerStates[i].player.playerInputScheme.id == id)
                     return i;
         return -1;
     }
@@ -153,7 +161,7 @@ public class PlayerStatsManagerBehaviour : MonoBehaviour {
         for (int i = 0; i < playerStates.Length; i++)
         {
             playerStates[i] = new PlayerState();
-            playerStates[i].id = stats[i].id;
+            playerStates[i].player = playerControls[i].getPlayer();
             playerStates[i].ready = !stats[i].connected;
         }
 
@@ -161,5 +169,10 @@ public class PlayerStatsManagerBehaviour : MonoBehaviour {
         statsDisplayer.gameObject.SetActive(true);
         statsDisplayer.buildStatBoard(stats, playerControls, this);
         statsDisplayer.updateStatBoardState(playerStates);
+    }
+
+    public int getWinner()
+    {
+        return GetComponent<PlayerManagerBehaviour>().getWinner();
     }
 }

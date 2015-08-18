@@ -27,7 +27,8 @@ public enum PlayerInput
     SplitControlInput1,
     SplitControlInput2,
     WiggleHorizontalInput,
-    WiggleVerticalInput
+    WiggleVerticalInput,
+    StartGameInput
 }
 
 public class PlayerInputScheme
@@ -82,6 +83,7 @@ public class InputManagerBehaviour : MonoBehaviour {
     public delegate void InputManagerDelegate(PlayerInputScheme inputtingPlayer, string input, float value);
     public static event InputManagerDelegate axisPressed;
     public static event InputManagerDelegate buttonPressed;
+    public static event InputManagerDelegate buttonLetGo;
 
     public delegate void OnePlayerControllerDelegate(PlayerInputScheme player);
     public static event OnePlayerControllerDelegate playerRemoved;
@@ -89,7 +91,8 @@ public class InputManagerBehaviour : MonoBehaviour {
 
     private List<PlayerInputScheme> players = new List<PlayerInputScheme>();
 
-    List<InputLog> loggedInputs = new List<InputLog>();
+    List<InputLog> loggedButtonsDown = new List<InputLog>();
+    List<InputLog> loggedButtonsUp = new List<InputLog>();
     List<string> loggedInputStrings = new List<string>();
 
     private List<string> currentControllers = new List<string>();
@@ -135,7 +138,8 @@ public class InputManagerBehaviour : MonoBehaviour {
                     {PlayerInput.SubmitInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " Submit", shortName = "Submit", inUse = false}},
                     {PlayerInput.CancelInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " Cancel", shortName = "Cancel", inUse = false}},
                     {PlayerInput.ChangeModeInput,   new InputAxisAndButtons {axis = false, inputName = inputString + " ChangeMode", shortName = "ChangeMode", inUse = false}},
-                    {PlayerInput.PauseInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " Pause", shortName = "Pause", inUse = false}}
+                    {PlayerInput.PauseInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " Pause", shortName = "Pause", inUse = false}},
+                    {PlayerInput.StartGameInput,    new InputAxisAndButtons {axis = false, inputName = inputString + " StartGame", shortName = "StartGame", inUse = false}}
                 }
         };
     }
@@ -165,7 +169,8 @@ public class InputManagerBehaviour : MonoBehaviour {
                 {PlayerInput.ChangeModeInput,   new InputAxisAndButtons {axis = false, inputName = inputString + " ChangeMode", shortName = "ChangeMode", inUse = false}},
                 {PlayerInput.PauseInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " Pause", shortName = "Pause", inUse = false}},
                 {PlayerInput.SplitControlInput1,new InputAxisAndButtons {axis = false, inputName = inputString + " SplitControl1", shortName = "SplitControl1", inUse = false}},
-                {PlayerInput.SplitControlInput2,new InputAxisAndButtons {axis = false, inputName = inputString + " SplitControl2", shortName = "SplitControl2", inUse = false}}
+                {PlayerInput.SplitControlInput2,new InputAxisAndButtons {axis = false, inputName = inputString + " SplitControl2", shortName = "SplitControl2", inUse = false}},
+                {PlayerInput.StartGameInput,    new InputAxisAndButtons {axis = false, inputName = inputString + " StartGame", shortName = "StartGame", inUse = false}}
             }
         };
     }
@@ -191,6 +196,7 @@ public class InputManagerBehaviour : MonoBehaviour {
                 {PlayerInput.ChangeModeInput,   new InputAxisAndButtons {axis = false, inputName = inputString + " ChangeMode", shortName = "ChangeMode", inUse = false}},
                 {PlayerInput.PauseInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " Pause", shortName = "Pause", inUse = false}},
                 {PlayerInput.SplitControlInput1,new InputAxisAndButtons {axis = false, inputName = inputString + " JoinControl", shortName = "JoinControl", inUse = false}},
+                {PlayerInput.StartGameInput,    new InputAxisAndButtons {axis = false, inputName = inputString + " StartGame", shortName = "StartGame", inUse = false}}
             }
         };
     }
@@ -386,22 +392,20 @@ public class InputManagerBehaviour : MonoBehaviour {
                             if (!player.inputs[playerInput].inUse)
                             {
                                 player.inputs[playerInput].inUse = true;
-                                logInput(player, player.inputs[playerInput].shortName, input, true);
+                                logInputDown(player, player.inputs[playerInput].shortName, input, true);
                             }
                         }
                         else
-                        {
                             player.inputs[playerInput].inUse = false;
-                        }
                     }
                     else
                     {
                         //buttons
-                        if (buttonPressed != null)
-                        {
-                            if (Input.GetButtonDown(player.inputs[playerInput].inputName))
-                                logInput(player, player.inputs[playerInput].shortName, 1, true);
-                        }
+                        if (Input.GetButtonDown(player.inputs[playerInput].inputName))
+                            logInputDown(player, player.inputs[playerInput].shortName, 1, true);
+
+                        if (Input.GetButtonUp(player.inputs[playerInput].inputName))
+                            logInputUp(player, player.inputs[playerInput].shortName, 1);
                     }
                 }
             }
@@ -409,45 +413,58 @@ public class InputManagerBehaviour : MonoBehaviour {
         
         //menu clearer if no one has pressed on an axis
         if (noAxis && axisPressed != null)
-        {
             axisPressed(new PlayerInputScheme(), "Vertical", 10);
-        }	
 
-        foreach(InputLog log in loggedInputs)
-        {
-            if (buttonPressed != null)
+        if (buttonPressed != null)
+            foreach (InputLog log in loggedButtonsDown)
                 buttonPressed(log.InputtedPlayer, log.input, log.value);
-        }
-        loggedInputs.Clear();
+
+        loggedButtonsDown.Clear();
         loggedInputStrings.Clear();
+
+        if (buttonLetGo != null)
+            foreach (InputLog log in loggedButtonsUp)
+                buttonLetGo(log.InputtedPlayer, log.input, log.value);
+
+        loggedButtonsUp.Clear();
     }
     
-    private void logInput(PlayerInputScheme player, string input, float value, bool duplicate)
+    private void logInputUp(PlayerInputScheme player, string input, float value)
     {
         InputLog log = new InputLog();
         log.InputtedPlayer = player;
         log.input = input;
         log.value = value;
 
-        logInput(log, false);
+        loggedButtonsUp.Add(log);
     }
 
-    private void logInput(PlayerInputScheme player, string input, float value)
+    private void logInputDown(PlayerInputScheme player, string input, float value, bool duplicate)
     {
-        logInput(player, input, value, false);
+        InputLog log = new InputLog();
+        log.InputtedPlayer = player;
+        log.input = input;
+        log.value = value;
+
+        logInputDown(log, false);
     }
 
-    private void logInput(InputLog input)
+    private void logInputDown(PlayerInputScheme player, string input, float value)
     {
-        logInput(input, false);
+        logInputDown(player, input, value, false);
     }
 
-    private void logInput(InputLog input, bool duplicate)
+    private void logInputDown(InputLog input)
+    {
+        logInputDown(input, false);
+    }
+
+    private void logInputDown(InputLog input, bool duplicate)
     {
         //logs input, but doesn't duplicate if set
         if ((!loggedInputStrings.Contains(input.input)) || duplicate)
         {
-            loggedInputs.Add(input);
+            loggedButtonsDown.Add(input);
             loggedInputStrings.Add(input.input);
         }
     }

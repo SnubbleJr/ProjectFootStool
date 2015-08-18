@@ -48,7 +48,8 @@ public class LoadSettingsFile: MonoBehaviour {
     private IEnumerator loadtSettings()
     {
         foreach (Setting setting in Enum.GetValues(typeof(Setting)))
-            settings.Add(setting, 1);
+            if (!settings.ContainsKey(setting))
+                settings.Add(setting, 1);
 
         //try and read
         try

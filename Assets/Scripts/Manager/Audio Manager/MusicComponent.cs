@@ -3,25 +3,51 @@ using System.Collections;
 
 public class MusicComponent : MonoBehaviour {
 
-    public MusicTrack musicTrack;
-    
-    public MusicManagerBehaviour musicManager;
+    private MusicTrack musicTrack;
+    private AudioClip customTrack;
+
+    private MusicManagerBehaviour musicManager;
+
+    void Awake()
+    {
+        musicManager = MusicManagerBehaviour.Instance;
+    }
 
     public void playMusic()
     {
-        if (musicManager != null)
+        if (musicTrack == MusicTrack.Custom && customTrack != null)
+            musicManager.playMusic(musicTrack, customTrack);
+        else
             musicManager.playMusic(musicTrack);
+    }
+
+    public void playMusic(MusicTrack track)
+    {
+        setMusic(track);
+        playMusic();
     }
 
     public void stopMusic()
     {
-        if (musicManager != null)
+        try
+        {
             musicManager.stopMusic();
+        }
+        catch
+        {
+        }
     }
 
     public void setMusic(MusicTrack track)
     {
         musicTrack = track;
+    }
+
+    public void setMusic(MusicTrack track, AudioClip custom)
+    {
+        musicTrack = track;
+        if (custom != null)
+            customTrack = custom;
     }
 
     public void setMusic(GameMode gameMode)

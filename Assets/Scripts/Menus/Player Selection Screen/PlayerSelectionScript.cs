@@ -9,6 +9,8 @@ using System;
 public class PlayerSelectionScript : MonoBehaviour {
 
     public GameObject backgroundSprite;
+    public GameObject greenOption;
+    public GameObject redOption;
     public UITextScript mainText;
     public UITextScript teamText;
     public GameObject controlsCanvas;
@@ -78,6 +80,14 @@ public class PlayerSelectionScript : MonoBehaviour {
         grabAndBuildTiles();
 	}
 
+    void OnEnable()
+    {
+        particleSystem = GetComponent<ParticleSystem>();
+        //check if particles should play
+        if (ready && !particleSystem.isPlaying)
+            particleSystem.Play();
+    }
+
     private void grabAndBuildTiles()
     {
         spriteTiles = new List<PlayerSelectionTileBehaviour>();
@@ -115,7 +125,7 @@ public class PlayerSelectionScript : MonoBehaviour {
             spriteTiles[i].setColor(newColor);
 
             //set the sprite tiles to render infornt of color tiles
-            tile.GetComponent<SpriteRenderer>().sortingOrder = 1;
+            tile.GetComponent<SpriteRenderer>().sortingOrder = 2;
         }
 
         //y axis
@@ -147,19 +157,7 @@ public class PlayerSelectionScript : MonoBehaviour {
         currentScrollSpeedMinV = scrollSpeedMin;
     }
 
-    void OnEnable()
-    {
-        InputManagerBehaviour.buttonPressed += buttonDetected;
-        InputManagerBehaviour.axisPressed += axisDetected;
-    }
-
-    void OnDisable()
-    {
-        InputManagerBehaviour.buttonPressed -= buttonDetected;
-        InputManagerBehaviour.axisPressed -= axisDetected;
-    }
-
-    void buttonDetected(PlayerInputScheme player, string inputName, float value)
+    public void buttonDetected(PlayerInputScheme player, string inputName, float value)
     {
         if (player.id == playerInputScheme.id)
         {
@@ -170,20 +168,14 @@ public class PlayerSelectionScript : MonoBehaviour {
                 if (inputName == "Cancel")
                 {
                     if (ready)
-                    {
-                        ready = false;
                         unready();
-                    }
                     else
                         setActive(false);
                 }
                 else
                 {
                     if (inputName == "Submit" && active && !ready)
-                    {
-                        ready = true;
                         readyUp();
-                    }
 
                     if (!inputName.Contains("ump"))
                         //activate upon any input,
@@ -194,7 +186,7 @@ public class PlayerSelectionScript : MonoBehaviour {
         }
     }
 
-    void axisDetected(PlayerInputScheme player, string inputName, float value)
+    public void axisDetected(PlayerInputScheme player, string inputName, float value)
     {
         if (player.id == playerInputScheme.id)
         {
@@ -219,42 +211,6 @@ public class PlayerSelectionScript : MonoBehaviour {
             }
         }
     }
-
-    // Update is called once per frame
-	void Update ()
-    {
-        if (spriteTiles == null || colorTiles == null)
-            grabAndBuildTiles();
-
-        if (!active && !greyedOut)
-            mainText.setText("<size=25><color=yellow> Player " + playerNo + "\nPress some buttons</color></size>");
-        else
-            mainText.setText("");
-
-        rotateWindow();
-
-        if (active && ready)
-            mainText.setText("<size=50><color=yellow>\r\n\r\nREADY!</color></size>");
-
-        //check if particvle system is playing and play if we need it to
-        if (ready && !particleSystem.isPlaying)
-            particleSystem.Play();
-
-        if (!greyedOut)
-        {
-            //set the currently selected tiles to unavailabe
-            if (active)
-            {
-                spriteTiles[currentSprite].getSprite().setAvailable(false);
-                colorTiles[currentColor].getColor().setAvailable(false);
-            }
-
-            setTileAlpha();
-
-            //the currently selected sprite will get the currently selected color
-            spriteTiles[currentSprite].setColor(colorTiles[currentColor].getColor());
-        }
-	}
 
     private void axisSelection(string navigateAxis, float input, bool playSound)
     {
@@ -351,10 +307,28 @@ public class PlayerSelectionScript : MonoBehaviour {
                 currentScrollSpeedV = 0;
             }
         }
+
+        if (spriteTiles == null || colorTiles == null)
+            grabAndBuildTiles();
+
+        //set the currently selected tiles to unavailabe
+        if (active)
+        {
+            spriteTiles[currentSprite].getSprite().setAvailable(false);
+            colorTiles[currentColor].getColor().setAvailable(false);
+        }
+
+        setTileEnabled();
+        //setTileAlpha();
+
+        //the currently selected sprite will get the currently selected color
+        spriteTiles[currentSprite].setColor(colorTiles[currentColor].getColor());
     }
 
     private void readyUp()
     {
+        ready = true;
+
         //make all other tiles dissapear
         for (int i = 0; i < spriteTiles.Count; i++)
         {
@@ -369,6 +343,9 @@ public class PlayerSelectionScript : MonoBehaviour {
         }
 
         spriteRenderer.enabled = false;
+        greenOption.SetActive(false);
+        redOption.SetActive(false);
+        controlsCanvas.SetActive(false);
 
         //enlarges the selected skin
         spriteTiles[currentSprite].transform.localScale *= 3;
@@ -378,14 +355,19 @@ public class PlayerSelectionScript : MonoBehaviour {
         Color color = colorTiles[currentColor].getColor().color;
         color.a = 1;
         particleSystem.startColor = color;
+        particleSystem.loop = true;
         particleSystem.Play();
 
         //plays sound
         SFXManagerBehaviour.Instance.playSound(selectionSound);
+
+        mainText.setText("<size=50><color=yellow>\r\n\r\nREADY!</color></size>");
     }
 
     private void unready()
     {
+        ready = false;
+
         //shrink the selected skin
         spriteTiles[currentSprite].transform.localScale /= 3;
         colorTiles[currentColor].transform.localScale /= 3;
@@ -406,18 +388,18 @@ public class PlayerSelectionScript : MonoBehaviour {
         //unset old selected
         colorTiles[currentColor].getColor().setAvailable(true);
 
-        if (direction > 0)
+        if (direction < 0)
         {
             moveColorWheelUp();
             //if this color is already picked, then go again
             if (!colorTiles[currentColor].getColor().getAvailable())
-                moveColorWheel(1, false);
+                moveColorWheel(direction, false);
         }
-        else if (direction < 0)
+        else if (direction > 0)
         {
             moveColorWheelDown();
             if (!colorTiles[currentColor].getColor().getAvailable())
-                moveColorWheel(-1, false);
+                moveColorWheel(direction, false);
         }
 
         //play sound
@@ -438,18 +420,18 @@ public class PlayerSelectionScript : MonoBehaviour {
         newColor.setAvailable(true);
         spriteTiles[currentSprite].setColor(newColor);
 
-        if (direction > 0)
+        if (direction < 0)
         {
             moveSpriteWheelLeft();
             //if this spreit is already picked, then go again
             if (!spriteTiles[currentSprite].getSprite().getAvailable())
-                moveSpriteWheel(1, false);
+                moveSpriteWheel(direction, false);
         }
-        else if (direction < 0)
+        else if (direction > 0)
         {
             moveSpriteWheelRight();
             if (!spriteTiles[currentSprite].getSprite().getAvailable())
-                moveSpriteWheel(-1, false);
+                moveSpriteWheel(direction, false);
         }
 
         //play sound
@@ -521,15 +503,58 @@ public class PlayerSelectionScript : MonoBehaviour {
 
     private void updateTeam()
     {
-        if (team)
+        if (team && active && !ready)
         {
             teamNo = (int)(currentColor / 19) + 1;
-            teamText.setText("<size=25><color=#" + playerColors[currentColor].color.GetHashCode() + "> Team " + teamNo + "</color></size>");
+            teamText.setText("<size=25><color=#" + colorTiles[currentColor].getColor().GetHashCode() + ">Team " + teamNo + "</color></size>");
         }
         else
         {
             teamNo = playerNo;
             teamText.setText("");
+        }
+    }
+
+    private void setTileEnabled()
+    {
+        //more effecicent script that doesn't bobther with alpha anymore and just disables them if too far
+
+        float alpha;
+
+        Vector3 scale = spriteTiles[currentSprite].transform.localScale;
+        float distance;
+
+        for (int i = 0; i < spriteTiles.Count; i++)
+        {
+            alpha = spriteTiles[i].getColor().color.a;
+
+            //calculate and pick the shortest distance to the centre
+            //scale it down so we get int values of dist from current
+            distance = (spriteTiles[currentSprite].transform.localPosition.x - spriteTiles[i].transform.localPosition.x) / scale.x;
+
+            //distance coverers, different for left and right
+
+            //length on right
+            //shorten the left side
+            //if negative, then on left
+            if (distance > 6 || distance < -2)
+                alpha = 0;
+
+            spriteTiles[i].setAlpha(alpha);
+        }
+
+        for (int i = 0; i < colorTiles.Count; i++)
+        {
+            alpha = colorTiles[i].getColor().color.a;
+
+            //calculate and pick the shortest distance to the centre
+            //scale it down so we get int values of dist from current
+            distance = (colorTiles[currentColor].transform.localPosition.y - colorTiles[i].transform.localPosition.y) / scale.y;
+
+            if (Mathf.Abs(distance) > 3)
+                alpha = 0;
+
+            colorTiles[i].setAlpha(alpha);
         }
     }
 
@@ -600,7 +625,7 @@ public class PlayerSelectionScript : MonoBehaviour {
         controlsCanvas.SendMessage("setControl", player);
     }
 
-    public PlayerInputScheme getPlayer()
+    public PlayerInputScheme getPlayerInputScheme()
     {
         return playerInputScheme;
     }
@@ -608,6 +633,14 @@ public class PlayerSelectionScript : MonoBehaviour {
     public int getPlayerNo()
     {
         return playerNo;
+    }
+
+    public int getPlayerInputSchemeId()
+    {
+        if (playerInputScheme != null)
+            return playerInputScheme.id;
+        else
+            return 0;
     }
 
     public void setPlayerNo(int no)
@@ -660,6 +693,14 @@ public class PlayerSelectionScript : MonoBehaviour {
         colorTiles[currentColor].getColor().setAvailable(!value);
 
         spriteRenderer.enabled = value;
+        greenOption.SetActive(value);
+        redOption.SetActive(value);
+        controlsCanvas.SetActive(value);
+        
+        if (!active && !greyedOut)
+            mainText.setText("<size=25><color=yellow>Player " + playerNo + "\nPress some buttons</color></size>");
+        else
+            mainText.setText(" ");
     }
 
     public bool getReady()

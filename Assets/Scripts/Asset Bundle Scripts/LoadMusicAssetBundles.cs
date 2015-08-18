@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Audio;
 using System.Collections;
 
 public class LoadMusicAssetBundles : MonoBehaviour {
@@ -26,6 +27,7 @@ public class LoadMusicAssetBundles : MonoBehaviour {
         yield return StartCoroutine(loadAsset("Music", "Stock.mp3", MusicTrack.StockGame));
         yield return StartCoroutine(loadAsset("Music", "Menu Hype Layer.mp3", MusicTrack.PlayerSelectionMenu));
         yield return StartCoroutine(loadAsset("Music", "Menu Base Layer.ogg", MusicTrack.MainMenu));
+        yield return StartCoroutine(assignCustomTrack());
     }
 
     private IEnumerator loadAsset(string path, string asset, MusicTrack musicTrack)
@@ -40,27 +42,58 @@ public class LoadMusicAssetBundles : MonoBehaviour {
         MusicManagerBehaviour musicManager = MusicManagerBehaviour.Instance;
         GameObject GO = new GameObject(musicTrack.ToString());
         GO.transform.SetParent(musicManager.transform, false);
-        GO.AddComponent<AudioSource>();
-        GO.GetComponent<AudioSource>().clip = (AudioClip)LoadAssetFromAssetBundle.Instance.Obj;
+        yield return null;
+        
+        AudioSource audioSource = GO.AddComponent<AudioSource>();
+        audioSource.clip = (AudioClip)LoadAssetFromAssetBundle.Instance.Obj;
+        audioSource.loop = true;
 
+        yield return null;
+
+        AudioMixer musicMixer = Resources.Load("Audio Mixers/MusicMixer") as AudioMixer;
+        
         switch(musicTrack)
         {
             case MusicTrack.KothGame:
-                musicManager.kothMusic = GO.GetComponent<AudioSource>();
+                audioSource.outputAudioMixerGroup = musicMixer.FindMatchingGroups("Koth")[0];
+                musicManager.kothMusic = audioSource;
                 break;
             case MusicTrack.RaceGame:
-                musicManager.raceMusic = GO.GetComponent<AudioSource>();
+                audioSource.outputAudioMixerGroup = musicMixer.FindMatchingGroups("Race")[0];
+                musicManager.raceMusic = audioSource;
                 break;
             case MusicTrack.StockGame:
-                musicManager.stockMusic = GO.GetComponent<AudioSource>();
+                audioSource.outputAudioMixerGroup = musicMixer.FindMatchingGroups("Stock")[0];
+                musicManager.stockMusic = audioSource;
                 break;
             case MusicTrack.PlayerSelectionMenu:
-                musicManager.playerSelectionMusic = GO.GetComponent<AudioSource>();
+                audioSource.outputAudioMixerGroup = musicMixer.FindMatchingGroups("Menu Layer")[0];
+                musicManager.playerSelectionMusic = audioSource;
                 break;
             case MusicTrack.MainMenu:
-                musicManager.menuMusic = GO.GetComponent<AudioSource>();
+                audioSource.outputAudioMixerGroup = musicMixer.FindMatchingGroups("Menu Base")[0];
+                musicManager.menuMusic = audioSource;
                 break;
         }
+        yield return null;
+    }
+
+    private IEnumerator assignCustomTrack()
+    {
+        MusicManagerBehaviour musicManager = MusicManagerBehaviour.Instance;
+        GameObject GO = new GameObject("Custom");
+        GO.transform.SetParent(musicManager.transform, false);
+        yield return null;
+
+        AudioSource audioSource = GO.AddComponent<AudioSource>();
+        audioSource.loop = true;
+
+        yield return null;
+
+        AudioMixer musicMixer = Resources.Load("Audio Mixers/MusicMixer") as AudioMixer;
+
+        audioSource.outputAudioMixerGroup = musicMixer.FindMatchingGroups("Custom")[0];
+        musicManager.customMusic = audioSource;
         yield return null;
     }
 }

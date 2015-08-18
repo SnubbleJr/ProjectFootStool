@@ -14,13 +14,13 @@ public class MenuEntry : MonoBehaviour {
     private bool sliderEntry = false;
     private bool selected = false;
 
-    private Text guiText;
+    private Text text;
     private Color defaultColor;
 
     void Awake()
     {
-        guiText = GetComponent<Text>();
-        defaultColor = guiText.color;
+        text = GetComponent<Text>();
+        defaultColor = text.color;
     }
 
     //get the reset select evenr from Menu Script
@@ -48,12 +48,12 @@ public class MenuEntry : MonoBehaviour {
             //check if selected
             if (selected)
                 //selected code
-                guiText.color = highlightedColor;
+                text.color = highlightedColor;
             else
                 //unselected code
-                guiText.color = defaultColor;
+                text.color = defaultColor;
         else
-            guiText.color = Color.grey;
+            text.color = Color.grey;
     }
 
     void OnGUI()
