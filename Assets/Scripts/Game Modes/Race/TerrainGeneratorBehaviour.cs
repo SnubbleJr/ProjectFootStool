@@ -35,14 +35,25 @@ public class TerrainGeneratorBehaviour : MonoBehaviour {
                 platformPrefab = specialPlatforms[index];
 
             Vector2 pos = new Vector2(Random.Range(-8f, 8f), height);
-            GameObject plat = CustomLevelParser.Instance.parseObject(platformPrefab);
+            CustomLevelParser.Instance.parseObject(platformPrefab);
+            GameObject plat = CustomLevelParser.Instance.getParsedObject();
             plat.transform.position = pos;
             plat.transform.parent = transform;
-
+            plat.SetActive(true);
+            setChildren(plat.transform, true);
 
             plat.BroadcastMessage("startFade", SendMessageOptions.DontRequireReceiver);
 
             platforms.Add(plat);
+        }
+    }
+
+    private void setChildren(Transform trans, bool value)
+    {
+        foreach (Transform child in trans)
+        {
+            child.gameObject.SetActive(value);
+            setChildren(child, value);
         }
     }
 

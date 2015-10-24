@@ -67,6 +67,8 @@ public class EndGamePanelDisplayer : MonoBehaviour
 
         mask.transform.localPosition += getDirection() * 75 * (id + 1) * 20;
 
+        panelSlider.setTime(MusicManagerBehaviour.Instance.timeTillNextBeat() + ((60f / MusicManagerBehaviour.Instance.getBPM()) * id));
+
         panelSlider.setTime(0.3f * (id + 1));
         return panelSlider;
     }

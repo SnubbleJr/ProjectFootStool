@@ -5,7 +5,7 @@ public class SFXVolumeSliderElement : MonoBehaviour {
 
     public static float volume = 1f;
 
-    public delegate void SFXSliderDelegate();
+    public delegate void SFXSliderDelegate(bool save);
     public static event SFXSliderDelegate volumeChanged;
 
     private MenuScript menuScript;
@@ -25,7 +25,7 @@ public class SFXVolumeSliderElement : MonoBehaviour {
         transform.parent.SendMessage("finished");
 
         if (volumeChanged != null)
-            volumeChanged();
+            volumeChanged(true);
     }
 
     //set volume if hovered over
@@ -42,7 +42,7 @@ public class SFXVolumeSliderElement : MonoBehaviour {
             SFXManagerBehaviour.Instance.playSound(SFXSound);
 
             if (volumeChanged != null)
-                volumeChanged();
+                volumeChanged(false);
         }
     }
 }

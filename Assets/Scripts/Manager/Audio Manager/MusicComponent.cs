@@ -4,9 +4,12 @@ using System.Collections;
 public class MusicComponent : MonoBehaviour {
 
     private MusicTrack musicTrack;
+    private AudioClip customIntro;
     private AudioClip customTrack;
 
     private MusicManagerBehaviour musicManager;
+
+    private int customTrackBPM;
 
     void Awake()
     {
@@ -16,7 +19,7 @@ public class MusicComponent : MonoBehaviour {
     public void playMusic()
     {
         if (musicTrack == MusicTrack.Custom && customTrack != null)
-            musicManager.playMusic(musicTrack, customTrack);
+            musicManager.playMusic(musicTrack, customIntro, customTrack, customTrackBPM);
         else
             musicManager.playMusic(musicTrack);
     }
@@ -43,11 +46,14 @@ public class MusicComponent : MonoBehaviour {
         musicTrack = track;
     }
 
-    public void setMusic(MusicTrack track, AudioClip custom)
+    public void setMusic(MusicTrack track, AudioClip intro, AudioClip custom, int customBPM)
     {
         musicTrack = track;
+        customTrackBPM = customBPM;
         if (custom != null)
             customTrack = custom;
+        if (intro != null)
+            customIntro = intro;
     }
 
     public void setMusic(GameMode gameMode)

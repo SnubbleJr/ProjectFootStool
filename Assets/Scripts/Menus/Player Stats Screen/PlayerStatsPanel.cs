@@ -17,6 +17,7 @@ public class PlayerStatsPanel : MonoBehaviour {
     public UITextScript playerText, KOText, TKOText, SDText;
     public UIImageScript playerImage, crownImage, bulliedImage, bulliedByImage;
     public UITextScript readyText;
+    public Color winnerColor;
 
     private PulseInwardsScript pulseScript;
 
@@ -45,6 +46,7 @@ public class PlayerStatsPanel : MonoBehaviour {
         SDText.gameObject.SetActive(true);
 
         playerImage.gameObject.SetActive(true);
+
         crownImage.gameObject.SetActive(won);
 
         if (panelType == StatsPanelType.Long)
@@ -117,6 +119,9 @@ public class PlayerStatsPanel : MonoBehaviour {
         playerImage.setColor(player.getColor());
 
         crownImage.gameObject.SetActive(won);
+
+        if (won)
+            displayImageScript.setColor(winnerColor);
 
         if (panelType == StatsPanelType.Long)
         {

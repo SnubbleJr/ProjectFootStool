@@ -5,7 +5,8 @@ using System.Collections;
 
 public class SettingsGoBackScript : MonoBehaviour {
 
-    public GameObject settingsMenu;
+    public GameObject menuToDisable;
+    public GameObject menuToEnable; 
 
     private MenuEntry menuEntry;
 
@@ -25,23 +26,21 @@ public class SettingsGoBackScript : MonoBehaviour {
     void buttonDetected(PlayerInputScheme player, string inputName, float value)
     {
         //quit out if no one is in selecter
-        if (inputName == "Cancel")
+        if (inputName == player.inputs[PlayerInput.CancelInput].shortName.ToString())
             if (menuEntry)
             {
                 if (!menuEntry.getGreyedOut())
-                    SendMessage("goTime");
+                    goTime();
             }
             else
-                SendMessage("goTime");
+                goTime();
     }
 
     //when the gameobject this is attached to is activated, we do this 
     public void goTime()
     {
-        if (settingsMenu)
-        {
-            settingsMenu.GetComponent<MenuScript>().entryFinished();
-            settingsMenu.SetActive(false);
-        }
+        menuToDisable.SetActive(false);
+        menuToEnable.SetActive(true);
+        menuToDisable.GetComponent<MenuScript>().entryFinished();
     }
 }

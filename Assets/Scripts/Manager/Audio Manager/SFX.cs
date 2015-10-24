@@ -23,5 +23,6 @@
     PanelArrived2,
     PanelLeaving,
     PanelLeft,
-    None
+    None,
+    Dash
 };

@@ -17,7 +17,7 @@ public class InvertCylinderBehaviour : MonoBehaviour {
     void Update()
     {
         if (transform.localScale.x > 80)
-            this.enabled = false;
+            Destroy(this.gameObject);
 
         newTrans.x += 1.5f;
         newTrans.y += 1.5f;

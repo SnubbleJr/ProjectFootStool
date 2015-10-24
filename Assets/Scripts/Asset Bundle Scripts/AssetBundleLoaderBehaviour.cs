@@ -10,7 +10,7 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
 
     public static bool musicReady = false;
     public static bool settingReady = false;
-    public static bool levelReady = false;
+    public static bool levelsReady = false;
     public static bool statsReady = false;
     public static bool tipsReady = false;
 
@@ -48,7 +48,7 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
     {
         musicReady = false;
         settingReady = false;
-        levelReady = false;
+        levelsReady = false;
         statsReady = false;
         tipsReady = false;
 
@@ -59,11 +59,18 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
     private IEnumerator startLoading()
     {
         yield return StartCoroutine(createLoadingLoop());
-        yield return StartCoroutine(loadMusic());
-        yield return StartCoroutine(loadSettings());
-        yield return StartCoroutine(loadStats());
-        yield return StartCoroutine(loadTips());
-        yield return StartCoroutine(loadLevels());
+
+        yield return StartCoroutine(loadAsset(LoadMusicAssetBundles.Instance.loadMusicABs(), musicLoaded));
+        musicReady = true;
+        yield return StartCoroutine(loadAsset(LoadSettingsFile.Instance.loadSettingsFile(), settingsLoaded));
+        settingReady = true;
+        yield return StartCoroutine(loadAsset(LoadSettingsFile.Instance.loadSettingsFile(), statsLoaded));
+        statsReady = true;
+        yield return StartCoroutine(loadAsset(LoadTipsFile.Instance.loadTipsFile(), tipsLoaded));
+        tipsReady = true;
+        yield return StartCoroutine(loadAsset(LoadLevelAssetBundles.Instance.loadLevelABs(), levelsLoaded));
+        levelsReady = true;
+
         yield return StartCoroutine(setLoadingLoop());
 
         if (allLoaded != null)
@@ -96,7 +103,7 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
                 text = "Loading Stats...";
             else if (!tipsReady)
                 text = "Loading tips...";
-            else if (!levelReady)
+            else if (!levelsReady)
                 text = "Loading Levels...";
         }
         else
@@ -146,58 +153,16 @@ public class AssetBundleLoaderBehaviour : MonoBehaviour {
             loadingImage.setColor(color);
     }
 
-    private IEnumerator loadMusic()
+    private IEnumerator loadAsset(IEnumerator coroutine, AssetBundleLoadedDelegate loadedDelegate)
     {
         yield return StartCoroutine(setLoadingLoop());
-        //wait for music to load up
-        yield return StartCoroutine(LoadMusicAssetBundles.Instance.loadMusicABs());
-        musicReady = true;
-        if (musicLoaded != null)
-            musicLoaded();
-    }
-
-    private IEnumerator loadSettings()
-    {
-        yield return StartCoroutine(setLoadingLoop());
-        //wait for music to load up
-        yield return StartCoroutine(LoadSettingsFile.Instance.loadSettingsFile());
-        settingReady = true;
-        if (settingsLoaded != null)
-            settingsLoaded();
-    }
-
-    private IEnumerator loadStats()
-    {
-        yield return StartCoroutine(setLoadingLoop());
-        //wait for music to load up
-        yield return StartCoroutine(LoadStatsFile.Instance.loadStatsFile());
-        statsReady = true;
-        if (statsLoaded != null)
-            statsLoaded();
-    }
-
-    private IEnumerator loadTips()
-    {
-        yield return StartCoroutine(setLoadingLoop());
-        //wait for music to load up
-        yield return StartCoroutine(LoadTipsFile.Instance.loadTipsFile());
-        tipsReady = true;
-        if (tipsLoaded != null)
-            tipsLoaded();
-    }
-
-    private IEnumerator loadLevels()
-    {
-        yield return StartCoroutine(setLoadingLoop());
-        //wait for music to load up
-        //yield return StartCoroutine(LoadLevelAssetBundles.Instance.loadLevelABs());
-        levelReady = true;
-        if (levelsLoaded != null)
-            levelsLoaded();
+        yield return StartCoroutine(coroutine);
+        if (loadedDelegate != null)
+            loadedDelegate();
     }
 
     public bool getAllLoaded()
     {
-        return (musicReady && settingReady && levelReady && statsReady && tipsReady);
+        return (musicReady && settingReady && levelsReady && statsReady && tipsReady);
     }
 }

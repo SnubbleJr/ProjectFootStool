@@ -31,7 +31,7 @@ public class MasterAudioManagerBehaviour : MonoBehaviour {
             Debug.LogError("Master Mixer not assigned to Mixer Manager!");
 	}
 
-    private void volumeChanged()
+    public void volumeChanged(bool save)
     {
         masterMixer.SetFloat("masterVol", (MasterVolumeSliderElement.volume - 1) * 80);
     }
@@ -43,7 +43,7 @@ public class MasterAudioManagerBehaviour : MonoBehaviour {
 
     public void unmute()
     {
-        volumeChanged();
+        volumeChanged(false);
     }
 
     public AudioMixer getMasterMixer()

@@ -7,13 +7,12 @@ public class PulseToBeat : MonoBehaviour {
     public Vector3 direction = Vector3.up;
     public float magnitude = 3;
     public bool playOnBeat = true;
-    private Vector3 pos, dest;
+    private Vector3 pos;
 
 	// Use this for initialization
 	void Awake ()
     {
         pos = transform.position;
-        dest = pos + (direction * magnitude);
 	}
 
     void OnEnable()
@@ -29,7 +28,7 @@ public class PulseToBeat : MonoBehaviour {
     private void beatDectected(bool onTheBeat)
     {
         if (onTheBeat == playOnBeat)
-            transform.position = dest;
+            transform.position = pos + (direction * magnitude);
     }
 
 	// Update is called once per frame

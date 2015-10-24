@@ -5,6 +5,7 @@ public class TitleScreentoMenu : MonoBehaviour {
 
     public GameObject mainMenu;
     public float time = 1f;
+    public SFX startSound = SFX.MenuUp;
 
     private MusicComponent musicComponent;
 
@@ -37,6 +38,7 @@ public class TitleScreentoMenu : MonoBehaviour {
             //check to see if we have loaded everything in
             if (AssetBundleLoaderBehaviour.Instance.getAllLoaded())
             {
+                SFXManagerBehaviour.Instance.playSound(startSound);
 
                 Invoke("activateMenu", time);
 

@@ -19,7 +19,7 @@ public class MenuScript : MonoBehaviour {
     public static event MenuScriptDelegate optionSelected;
 
     private GameObject[] menuEntries;
-    private GameObject[] activeMenuEntries;
+    private MenuEntry[] activeMenuEntries;
 
     private int selected = 0;
     private int currentScrollSpeedMin = 0; //slowly increased while a direction is being pushed
@@ -31,23 +31,31 @@ public class MenuScript : MonoBehaviour {
 	// Use this for initialization
 	void Awake ()
     {
-        getMenuEntries();
-
-        //if no entries, disable
-        if (getActiveGO().Length <= 0)
-            this.enabled = false;
-
+        searchForMenuEntries();
+        
         //set scroll speed back to min
         currentScrollSpeed = scrollSpeedMin;
 
         //set current scroll min to min
         currentScrollSpeedMin = scrollSpeedMin;
 
+        //if no entries, disable
+        if (getActiveGO().Length <= 0)
+            this.enabled = false;
+    }
+
+    public void searchForMenuEntries()
+    {
+        getMenuEntries();
+
+        //if no entries, return
+        if (getActiveGO().Length <= 0)
+            return;
+
         //update active GO list
         activeMenuEntries = getActiveGO();
 
-        //set first entry to be selected
-        activeMenuEntries[selected].SendMessage("setSelected", true);
+        setEntrySelect();
     }
 
     private void getMenuEntries()
@@ -98,12 +106,12 @@ public class MenuScript : MonoBehaviour {
             selectOption();
     }
 
-    GameObject[] getActiveGO()
+    MenuEntry[] getActiveGO()
     {
         if (menuEntries == null)
             getMenuEntries();
 
-        List<GameObject> tmpList = new List<GameObject>();
+        List<MenuEntry> tmpList = new List<MenuEntry>();
 
         //go through menu entries, and add the non greyout ones to activeMenuEntries, so disabled options aren't suedo selected
         foreach (GameObject entry in menuEntries)
@@ -112,12 +120,12 @@ public class MenuScript : MonoBehaviour {
             {
                 //if entry is not greyed out, then add it
                 if (!entry.GetComponent<MenuEntry>().greyedOut)
-                    tmpList.Add(entry);
+                    tmpList.Add(entry.GetComponent<MenuEntry>());
             }
             catch
             {
                 //add it if it's another form of menu entry
-                tmpList.Add(entry);
+                tmpList.Add(entry.GetComponent<MenuEntry>());
             }
         }
 
@@ -202,13 +210,13 @@ public class MenuScript : MonoBehaviour {
     {
         for (int i = 0; i < activeMenuEntries.Length; i++)
             if (i != selected)
-                activeMenuEntries[i].GetComponent<MenuEntry>().setGreyedOut(true);
+                activeMenuEntries[i].setGreyedOut(true);
     }
 
     private void unGreyOutOtherEntries()
     {
         for (int i = 0; i < activeMenuEntries.Length; i++)
-            activeMenuEntries[i].GetComponent<MenuEntry>().setGreyedOut(false);
+            activeMenuEntries[i].setGreyedOut(false);
     }
 
     void setEntrySelect()
@@ -221,7 +229,7 @@ public class MenuScript : MonoBehaviour {
             activeMenuEntries = getActiveGO();
 
         //set new menu entry selected to be highlighted
-        activeMenuEntries[selected].SendMessage("setSelected", true);
+        activeMenuEntries[selected].setSelected(true);
     }
 
     void checkUpDownInput(float input)
@@ -286,7 +294,7 @@ public class MenuScript : MonoBehaviour {
             int hoveredEntry = -1;
             for (int i = 0; i < activeMenuEntries.Length; i++)
             {
-                if (activeMenuEntries[i].Equals(entry))
+                if (activeMenuEntries[i].gameObject.Equals(entry))
                     hoveredEntry = i;
             }
 
@@ -316,11 +324,16 @@ public class MenuScript : MonoBehaviour {
         int index = 0;
         for (int i = 0; i < activeMenuEntries.Length; i++)
         {
-            if (activeMenuEntries[i].Equals(entry))
+            if (activeMenuEntries[i].gameObject.Equals(entry))
                 index = i;
         }
 
         return index;
+    }
+
+    public GameObject getEntryAt(int index)
+    {
+        return menuEntries[index];
     }
 
     public int getEntryLength()

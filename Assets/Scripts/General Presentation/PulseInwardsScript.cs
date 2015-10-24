@@ -14,7 +14,7 @@ public class PulseInwardsScript : MonoBehaviour {
 	// Use this for initialization
 	void Awake ()
     {
-        movementScript = GetComponent<PositionLerper    >();
+        movementScript = GetComponent<PositionLerper>();
         setMovement(false);
 	}
 

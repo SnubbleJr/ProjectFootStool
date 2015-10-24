@@ -6,7 +6,7 @@ public class LevelMoverScript : MonoBehaviour {
     //slowly moves level up
     //increases in a sin curve
 
-    private float speed = Mathf.PI;
+    private float speed = 2 + Mathf.PI;
 
     private Vector3 originalPos;
     private Vector3 dest;

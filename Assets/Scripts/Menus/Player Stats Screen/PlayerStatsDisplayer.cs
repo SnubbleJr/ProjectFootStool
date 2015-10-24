@@ -95,7 +95,7 @@ public class PlayerStatsDisplayer : MonoBehaviour {
             if (bullyInt < 0)
                 bullyInt = i;
 
-            bool won = winner == (i + 1);
+            bool won = winner == playerControls[i].getPlayerNo();
 
             boardStats.setStats(players[i], playerStats[i], won, players[bulliedInt], players[bullyInt]);
         }

@@ -8,7 +8,7 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
     //dying does not make a player lose a life, but they do not respwan until the next round
     //level slowly moves up with procedural level
 
-    public int stockCount;
+    private int stockCount;
 
     private bool team = false;
 
@@ -43,8 +43,6 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
 
     void OnDisable()
     {
-        restartRound();
-
         levelMover.enabled = false;
         terrainGenerator.enabled = false;
     }
@@ -67,66 +65,55 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
         }
     }
 
-    void OnGUI()
-    {
-        GUI.skin = playerManager.skin;
-
-        //player gui
-
-        if (playerControls != null)
-        {
-            //if we get odd numbers of double the no of players (1,3,5,7 out of 8) then we get nice quartiles
-            int width = Screen.width / (playerControls.Length * 2);
-
-            int j = -1;
-
-            for (int i = 0; i < playerControls.Length; i++)
-            {
-                j = j + 2;
-
-                playerColors[i].color.a = 1;
-                Color color1 = playerColors[i].color;
-                Color color2 = Color.black;
-
-                //if player is hit, grey out their score
-                if (playerControls[i].getHit())
-                {
-                    color1.a = 0.5f;
-                    color2.a = 0.5f;
-                }
-
-                GUI.contentColor = color2;
-                GUI.Label(new Rect((width * j) + 2, 5, 50, 30), playerControls[i].getScore().ToString());
-                GUI.contentColor = color1;
-                GUI.Label(new Rect((width * j), 3, 50, 30), playerControls[i].getScore().ToString());
-
-                if (team)
-                {
-                    //draw team in little number underneath
-                    GUI.contentColor = color2;
-                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15>T " + playerControls[i].getTeamNo().ToString() + "</size>");
-                    GUI.contentColor = color1;
-                    GUI.Label(new Rect((width * j), 4 + 20, 50, 30), "<size=15>T " + playerControls[i].getTeamNo().ToString() + "</size>");
-                }
-                else
-                {
-                    //draw player in little number underneath
-                    GUI.contentColor = color2;
-                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15>P " + playerControls[i].getTeamNo().ToString() + "</size>");
-                    GUI.contentColor = color1;
-                    GUI.Label(new Rect((width * j), 4 + 20, 50, 30), "<size=15>P " + playerControls[i].getTeamNo().ToString() + "</size>");
-                }
-            }
-        }
-    }
-
     void Update()
     {
         //check if we need more platforms
-        if (levelMover.transform.position.y > (terrainGenerator.transform.position.y + currentChunkCount - 6))
+        if (levelMover.transform.position.y > (terrainGenerator.transform.position.y + currentChunkCount - 15))
         {
             terrainGenerator.spawnPlatforms(currentChunkCount + 1, platChunckAmount);
             currentChunkCount += platChunckAmount;
+        }
+    }
+
+    private void setScores()
+    {
+        int[] spawnOrder = playerManager.getSpawnOrder();
+
+        string teamPrefix = team ? "T" : "P";
+
+        clearScores();
+
+        //set score based on the order that they spawned
+        for (int i = 0; i < playerControls.Length; i++)
+        {
+            int index = 0;
+            for (int j = 0; j < spawnOrder.Length; j++)
+                if (i == spawnOrder[j])
+                    index = j;
+            PlayerControl playerControl = playerControls[index];
+            GameModeCanavsBehaviour.Instance.setPlayer(playerControl.getPlayerNo(), playerControl.getColor(), teamPrefix, playerControl.getTeamNo());
+            GameModeCanavsBehaviour.Instance.setPlayerScore(playerControl.getPlayerNo(), playerControl.getScore());
+        }
+    }
+
+    private void clearScores()
+    {
+        foreach (PlayerControl playerControl in playerControls)
+            GameModeCanavsBehaviour.Instance.unsetPlayer(playerControl.getPlayerNo());
+    }
+
+    private void updateScores()
+    {
+        foreach (PlayerControl playerControl in playerControls)
+        {
+            int playerNo = playerControl.getPlayerNo();
+
+            GameModeCanavsBehaviour.Instance.setPlayerScore(playerNo, playerControl.getScore());
+
+            if (playerControl.getHit())
+                GameModeCanavsBehaviour.Instance.setPlayerInactive(playerNo);
+            else
+                GameModeCanavsBehaviour.Instance.setPlayerActive(playerNo);
         }
     }
 
@@ -157,6 +144,8 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
             }
         }
 
+        updateScores();
+
         //if only one team remains
         //or
         //if only 1 player left alive, round is over
@@ -173,9 +162,7 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
             return players[currentAlivePlayer].transform;
         }
         else
-        {
             return null;
-        }
     }
 
     public int checkForWinner()
@@ -189,6 +176,8 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
                 return playerControl.getTeamNo();
             }
         }
+
+        updateScores();
 
         return 0;
     }
@@ -230,6 +219,9 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
             team = true;
         else
             team = false;
+
+        clearScores();
+        setScores();
     }
 
     public void setColors(PlayerColor[] col)
@@ -244,9 +236,23 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
 
     public void restartRound()
     {
-        levelMover.enabled = true;
-        levelMover.resetScript();
+        if (levelMover != null)
+        {
+            levelMover.enabled = true;
+            levelMover.resetScript();
+        }
         terrainGenerator.resetScript(platChunckAmount);
         currentChunkCount = platChunckAmount;
+
+        if (playerControls != null)
+        {
+            setScores();
+            updateScores();
+        }
+    }
+
+    public void endGame()
+    {
+        clearScores();
     }
 }

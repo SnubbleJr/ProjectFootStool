@@ -15,7 +15,7 @@ public class EndGameScreenBehaviour : MonoBehaviour
     // Use this for initialization
     void Awake()
     {
-        playerFollower =GetComponentInParent<PlayerFollower>();
+        playerFollower = GetComponentInParent<PlayerFollower>();
         camera = GetComponent<Camera>();
         oldTrans = transform;
     }
@@ -50,14 +50,16 @@ public class EndGameScreenBehaviour : MonoBehaviour
     {
         active = value;
 
+        //disable follower once we're using it
+        if (playerFollower == null)
+            playerFollower = GetComponentInParent<PlayerFollower>();
+    
+        playerFollower.enabled = !active;
+
         if (active)
-        {
             camera.backgroundColor = Color.white;
-        }
         else
-        {
             //reset
             camera.backgroundColor = Color.black;
-        }
     }
 }

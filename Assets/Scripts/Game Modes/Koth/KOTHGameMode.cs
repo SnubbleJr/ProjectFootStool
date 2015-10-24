@@ -7,7 +7,9 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
     //game mode is koth, but if you're not in the hill, you start lossing any score that you had
     //if the hill is contested then everyone's points remain the same
 
-    public int timeToWin;
+    public SFX closeToWinSound = SFX.PointAdded;
+
+    private int timeToWin;
 
     private bool team = false;
     
@@ -22,6 +24,8 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
     private HillTriggerScript[] hillTriggers;
     
     private PlayerFollower mainCamera;
+
+    private bool playerCloseToWinning = false;
 
     // Use this for initialization
     void OnEnable()
@@ -48,57 +52,58 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
             hills[i].GetComponent<HillActivationScript>().activate();
         }
     }
-
-    void OnGUI()
+    
+    private void setScores()
     {
-        GUI.skin = playerManager.skin;
+        int[] spawnOrder = playerManager.getSpawnOrder();
 
-        //player gui
+        string teamPrefix = team ? "T" : "P";
 
-        if (playerControls != null)
+        clearScores();
+
+        //set score based on the order that they spawned
+        for (int i = 0; i < playerControls.Length; i++)
         {
-            //if we get odd numbers of double the no of players (1,3,5,7 out of 8) then we get nice quartiles
-            int width = Screen.width / (playerControls.Length * 2);
+            int index = 0;
+            for (int j = 0; j < spawnOrder.Length; j++)
+                if (i == spawnOrder[j])
+                    index = j;
+            PlayerControl playerControl = playerControls[index];
+            GameModeCanavsBehaviour.Instance.setPlayer(playerControl.getPlayerNo(), playerControl.getColor(), teamPrefix, playerControl.getTeamNo());
+            GameModeCanavsBehaviour.Instance.setPlayerScore(playerControl.getPlayerNo(), playerControl.getScore());
+        }
+    }
 
-            int j = -1;
+    private void clearScores()
+    {
+        foreach (PlayerControl playerControl in playerControls)
+            GameModeCanavsBehaviour.Instance.unsetPlayer(playerControl.getPlayerNo());
+    }
 
-            for (int i = 0; i < playerControls.Length; i++)
-            {
-                j = j + 2;
+    private void updateScores()
+    {
+        //updates score to canvas, and sets sparticle system for players in hill
 
-                playerColors[i].color.a = 1;
-                Color color1 = playerColors[i].color;
-                Color color2 = Color.black;
+        foreach (PlayerControl playerControl in playerControls)
+        {
+            int playerNo = playerControl.getPlayerNo();
+            
+            if (playerControl.getHit())
+                GameModeCanavsBehaviour.Instance.setPlayerInactive(playerNo);
+            else
+                GameModeCanavsBehaviour.Instance.setPlayerActive(playerNo);
 
-                //if player is hit, grey out their score
-                if (playerControls[i].getHit())
-                {
-                    color1.a = 0.5f;
-                    color2.a = 0.5f;
-                }
+            bool inHill = false;
 
-                GUI.contentColor = color2;
-                GUI.Label(new Rect((width * j) + 2, 5, 50, 30), playerControls[i].getScore().ToString());
-                GUI.contentColor = color1;
-                GUI.Label(new Rect((width * j), 3, 50, 30), playerControls[i].getScore().ToString());
+            //then set particles for those who are in hills
+            foreach (GameObject player in getPlayersInAllHills())
+                if (player.GetComponent<PlayerControl>().getPlayerNo() == playerControl.getPlayerNo())
+                    inHill = true;
 
-                if (team)
-                {
-                    //draw team in little number underneath
-                    GUI.contentColor = color2;
-                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15>T " + playerControls[i].getTeamNo().ToString() + "</size>");
-                    GUI.contentColor = color1;
-                    GUI.Label(new Rect((width * j), 4 + 20, 50, 30), "<size=15>T " + playerControls[i].getTeamNo().ToString() + "</size>");
-                }
-                else
-                {
-                    //draw player in little number underneath
-                    GUI.contentColor = color2;
-                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15>P " + playerControls[i].getTeamNo().ToString() + "</size>");
-                    GUI.contentColor = color1;
-                    GUI.Label(new Rect((width * j), 4 + 20, 50, 30), "<size=15>P " + playerControls[i].getTeamNo().ToString() + "</size>");
-                }
-            }
+            if (inHill)
+                GameModeCanavsBehaviour.Instance.setInHill(playerControl.getPlayerNo());
+            else
+                GameModeCanavsBehaviour.Instance.unsetInHill(playerControl.getPlayerNo());
         }
     }
 
@@ -109,6 +114,8 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
     //by 1 if more than 1 is inside
     private void timerTick()
     {
+        playerCloseToWinning = false;
+
         //increase score first, so we don't get jump ups from 0
         foreach (HillTriggerScript trigger in hillTriggers)
         {
@@ -117,10 +124,18 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
             applyScore(playersInHill, teamsInHill);
         }
 
+        if (playerCloseToWinning)
+            SFXManagerBehaviour.Instance.playSound(closeToWinSound);
+
         //decrease everyone's score, if it isn't already 0
+        //and set their gui (done in tick so we don't get flitting between this and update)
         foreach (PlayerControl playerControl in playerControls)
+        {
             if (playerControl.getScore() > 0)
                 playerControl.decreaseScore();
+
+            GameModeCanavsBehaviour.Instance.setPlayerScore(playerControl.getPlayerNo(), playerControl.getScore());
+        }
     }
 
     private void applyScore(GameObject[] playersInHill, GameObject[] teamsInHill)
@@ -147,11 +162,19 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
         {
             if (player)
             {
-                if (player.GetComponent<PlayerControl>().getScore() >= timeToWin)
+                PlayerControl playerControl = player.GetComponent<PlayerControl>();
+
+                //if we are close to winning, and are the only one in the ring, then add a warning sound
+                if (playerControl.getScore() >= (timeToWin - 4) && scoreToAdd == 2)
+                    playerCloseToWinning = true;
+
+                if (playerControl.getScore() >= timeToWin)
                     scoreToAdd = 1;
-                player.GetComponent<PlayerControl>().increaseScore(scoreToAdd);
+                playerControl.increaseScore(scoreToAdd);
             }
         }
+
+        updateScores();
     }
 
     //return nothing really, here killing isn't a big deal
@@ -163,7 +186,7 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
         //invert the colors of all alive players
         foreach (PlayerControl playControl in playerControls)
             if (playControl.enabled == true)
-                playControl.invertColors();
+                playControl.resetColors();
 
         //inform the hills that this player has been hit, and they are to remove this player
         foreach (HillTriggerScript hillTrigger in hillTriggers)
@@ -197,7 +220,20 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
                 return team[0].getTeamNo();
         }
 
+        updateScores();
+
         return 0;
+    }
+
+    private List<GameObject> getPlayersInAllHills()
+    {
+        List<GameObject> playersInHills = new List<GameObject>();
+
+        foreach (HillTriggerScript hillTrigger in hillTriggers)
+            foreach (GameObject playerInHill in hillTrigger.getPlayersInHill())
+                playersInHills.Add(playerInHill);
+
+        return playersInHills;
     }
 
     public void setPlayers(GameObject[] p)
@@ -237,6 +273,8 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
             team = true;
         else
             team = false;
+
+        setScores();
     }
 
     public void setColors(PlayerColor[] col)
@@ -266,5 +304,12 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
 
     public void restartRound()
     {
+        setScores();
+        updateScores();
+    }
+
+    public void endGame()
+    {
+        clearScores();
     }
 }

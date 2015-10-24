@@ -45,7 +45,7 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
         GUI.skin.box.padding.left = ((Screen.width / 8) * 3) -150;
 
         if(allReady)
-            GUI.Box(new Rect(-30, Screen.height / 2 - 8, Screen.width + 60, 50), "<size=30><color=white>PRESS START (SPACE)</color></size>");
+            GUI.Box(new Rect(0, (Screen.height / 2), Screen.width, 50), "<size=30><color=white>PRESS START (SPACE)</color></size>");
     }
 
     void Update()
@@ -74,7 +74,7 @@ public class PlayerSelectionMenuScript : MonoBehaviour {
 
         if (input == player.inputs[PlayerInput.SubmitInput].shortName || input == player.inputs[PlayerInput.StartGameInput].shortName)
             if (allReady && validPlayer)
-                mainMenu.startGame();
+                mainMenu.playersChosen();
     }
 
     private bool checkReady()

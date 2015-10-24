@@ -82,8 +82,6 @@ void splashAtPoint(int x, int y) {
 // Update is called once per frame
 void Update () {
 	
-	checkInput();
-	
 	int[] currentBuffer;
 	if (swapMe) {
 	// process the ripples for this frame
@@ -108,17 +106,6 @@ void Update () {
 
 
     // swap buffers		
-}
-
-void checkInput() {	
- if (Input.GetMouseButton (0)) {
-	RaycastHit hit;
-	if (Physics.Raycast (Camera.main.ScreenPointToRay(Input.mousePosition), out hit)) {
-        Vector2 location = uVToCoOrds(hit.textureCoord);
-        
-	    splashAtPoint((int)location.x,(int)location.y);
-    }
- }
 }
 
 Vector2 uVToCoOrds(Vector2 coOrds)

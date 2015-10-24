@@ -15,6 +15,9 @@ public class StartGame : MonoBehaviour {
     //when the gameobject this is attached to is activated, we do this 
     public void goTime()
     {
+        if (mainMenu == null)
+            mainMenu = GameObject.Find("Menu Manager").GetComponent<MainMenuScript>();
+
         mainMenu.setGameMode(gameMode);
     }
 }

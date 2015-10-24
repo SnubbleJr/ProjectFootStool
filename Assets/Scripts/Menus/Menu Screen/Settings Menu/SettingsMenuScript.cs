@@ -17,8 +17,6 @@ public class SettingsMenuScript : MonoBehaviour {
     {
         //close up shop
         if (mainMenu != null)
-        {
             mainMenu.SetActive(true);
-        }
     }
 }

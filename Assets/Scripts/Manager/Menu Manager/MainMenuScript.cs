@@ -57,24 +57,61 @@ public class MainMenuScript : MonoBehaviour {
         }
     }
     
+    public void playersChosen()
+    {
+        //disable player menu scipt
+        playerSelectionMenu.setScript(false);
+        playerSelectionMenu.enabled = false;
+
+        displayLevelMenu();
+    }
+
+    private void backToPlayerMenu()
+    {
+        //open up the player menu again
+        playerSelectionMenu.setScript(true);
+        playerSelectionMenu.enabled = true;
+
+        displayLevelMenu();
+    }
+
+    private void displayLevelMenu()
+    {
+        //wait on level menu
+        //pass gameMode for level to manager
+        levelManager.openMenu(playerSelectionMenu.GetGameMode());
+    }
+
+    private void hideLevelMenu()
+    {
+        levelManager.closeMenu();
+    }
+
+    public void levelChosen(int option)
+    {
+        hideLevelMenu();
+
+        if (option < 0)
+            backToPlayerMenu();
+        else
+            startGame();
+    }
+
     public void startGame()
     {
-        inGame = true;
-        playerManager.enabled = true;
-        playerFollower.enabled = true;
-        
-        //game mode checking here
+        //gather components for game
+        Player[] players = playerSelectionMenu.getReadyPlayers();
         GameMode gameMode = playerSelectionMenu.GetGameMode();
         int scoreCount = playerSelectionMenu.getStockCount();
         bool team = playerSelectionMenu.getTeamMode();
 
-        Player[] players = playerSelectionMenu.getReadyPlayers();
+        //setting of level
+        levelManager.startLevel();
 
-        levelManager.setLevel(gameMode);
-
-        //disable player menu scipt
-        playerSelectionMenu.setScript(false);
-        playerSelectionMenu.enabled = false;
+        //starting of the game
+        inGame = true;
+        playerManager.enabled = true;
+        playerFollower.enabled = true;
 
         playerManager.startGame(players, gameMode, team, scoreCount);
         Camera.main.transform.rotation = Quaternion.identity;

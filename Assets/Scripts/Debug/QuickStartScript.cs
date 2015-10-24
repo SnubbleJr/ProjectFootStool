@@ -10,7 +10,9 @@ public class QuickStartScript : MonoBehaviour {
     public GameObject menuManager;
     public GameObject playerSelectionManager;
     public GameObject menuScreen;
+    public AudioClip trackIntro;
     public AudioClip trackToPlay;
+    public int BPM;
 
     public GameMode gameMode;
     public int stockCount;
@@ -43,9 +45,9 @@ public class QuickStartScript : MonoBehaviour {
 
         playerSelectionMenuScript.setPlayers();
         playerSelectionMenuScript.setStockCount(stockCount);
-        mainMenuScript.startGame();
+        mainMenuScript.playersChosen();
 
         if (trackToPlay)
-            MusicManagerBehaviour.Instance.playMusic(MusicTrack.Custom, trackToPlay);
+            MusicManagerBehaviour.Instance.playMusic(MusicTrack.Custom, trackIntro, trackToPlay, BPM);
     }
 }

@@ -1,13 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public enum GameMode
-{
-    Stock,
-    Koth,
-    Race,
-};
-
 public interface IGameMode
 {  
     Transform playerHit(PlayerControl playerControl);
@@ -23,4 +16,6 @@ public interface IGameMode
     void setScore(int score);
     
     void restartRound();
+
+    void endGame();
 }

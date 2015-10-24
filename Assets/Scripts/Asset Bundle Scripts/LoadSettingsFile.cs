@@ -70,32 +70,38 @@ public class LoadSettingsFile: MonoBehaviour {
             Debug.Log("Could not find " + Application.dataPath + path);
         }
 
-        applySettings();
-        saveSettings();
-        yield return null;
+        yield return applySettings();
+        yield return saveSettings();
     }
 
-    private void masterVolChanged()
+    private void masterVolChanged(bool save)
     {
         settings[Setting.MasterVol] = MasterVolumeSliderElement.volume;
-        saveSettings();
+        if (save)
+            saveSettings();
     }
     
-    private void musicVolChanged()
+    private void musicVolChanged(bool save)
     {
         settings[Setting.MusicVol] = MusicVolumeSliderElement.volume;
-        saveSettings();
+        if (save)
+            saveSettings();
     }
 
-    private void sfxVolChanged()
+    private void sfxVolChanged(bool save)
     {
         settings[Setting.SFXVol] = SFXVolumeSliderElement.volume;
-        saveSettings();
+        if (save)
+            saveSettings();
     }
 
-    private void saveSettings()
+    private IEnumerator saveSettings()
     {
         //write settings to a file,
+
+        //create folder first
+        Directory.CreateDirectory(Directory.GetParent(Application.dataPath + path).ToString());
+
         string[] settingsInFile = new string[Enum.GetValues(typeof(Setting)).Length];
 
         foreach (Setting setting in Enum.GetValues(typeof(Setting)))
@@ -107,13 +113,20 @@ public class LoadSettingsFile: MonoBehaviour {
 #if UNITY_EDITOR
         UnityEditor.AssetDatabase.Refresh();
 #endif
+
+        yield return null;
     }
 
-    private void applySettings()
+    private IEnumerator applySettings()
     {
         MasterVolumeSliderElement.volume = settings[Setting.MasterVol];
         MusicVolumeSliderElement.volume = settings[Setting.MusicVol];
         SFXVolumeSliderElement.volume = settings[Setting.SFXVol];
+
+        MasterAudioManagerBehaviour.Instance.volumeChanged(false);
+        MusicManagerBehaviour.Instance.volumeChanged(false);
+        SFXManagerBehaviour.Instance.volumeChanged(false);
+        yield return null;
     }
 
     public Dictionary<Setting, float> getSettings()

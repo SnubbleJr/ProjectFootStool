@@ -10,6 +10,12 @@ public class PlayerControl : MonoBehaviour {
     public float fastFallForce;
     public float moveForce;
     public float maxSpeed;
+    public float airMoveForce;
+    public float airMaxSpeed;
+    public float flumpMaxSpeed;
+    public float dashDistance = 2;
+    public int dashFrameTime = 5;
+    public int dashCoolDownTime = 5;
 
     public SFX jumpSound = SFX.Jump;
     public SFX dJumpSound = SFX.DoubleJump;
@@ -18,6 +24,7 @@ public class PlayerControl : MonoBehaviour {
     public SFX landingSound = SFX.Land;
     public SFX flumpSound = SFX.Flump;
     public SFX deathSound = SFX.Death;
+    public SFX dashSound = SFX.Dash;
 
     private int playerNo;
     private int teamNo;
@@ -34,13 +41,20 @@ public class PlayerControl : MonoBehaviour {
     private bool doubleJump = false;
     private bool hasJumped = true;   //a state for if we have already double jumped still needs to be held.
     private bool hasDoubleJumped = true;   //a state for if we have already double jumped still needs to be held.
-    private bool inAir = true;
+    private bool inAir = false;
     private bool landed = false;
     private bool firstTimeOnWall = false;
     private bool hasBeenOnWall = false;
+    
+    private bool dash = false;
+    private bool hasDashed = false;
+    private bool isDashing = false;
+    private float currentDashDistance;
+    private int currentDashCoolDown;
+    private int dashDirection;
 
-    private float platRayHeight = 0.75f;
-    private bool aboveJumpablePlate = false;
+    private float platRayHeight = 1f;
+    private bool aboveJumpablePlat = false;
 
     private Collider2D fallThroughPlat;
 
@@ -52,6 +66,8 @@ public class PlayerControl : MonoBehaviour {
     private bool keyboard = false;
 
     private int lastPressed = 0;
+
+    private float currentAirSpeed;
 
     private Vector2 playerTopLeft;
     private Vector2 playerTopRight;
@@ -81,6 +97,9 @@ public class PlayerControl : MonoBehaviour {
     private string rightKey;
     private string leftKey;
     private string downKey;
+    private string dashKey;
+    private string downTrigger;
+    private string dashTrigger;
 
     private Player player;
 
@@ -92,17 +111,22 @@ public class PlayerControl : MonoBehaviour {
     private ParticleSystem groundParticleSystem;
     private ParticleSystem wallLeftParticleSystem;
     private ParticleSystem wallRightParticleSystem;
+    private ParticleSystem dashParticleSystem;
 
     private GameObject viewingCamera;
 
     private Rigidbody2D rigidbody2D;
     private Collider2D collider2D;
 
+    private PlayerIndicatorBehaviour playerIndicator;
+
     private int groundLayerMask;
 
 	// Use this for initialization
     void Awake()
     {
+        currentAirSpeed = airMaxSpeed;
+
         rigidbody2D = GetComponent<Rigidbody2D>();
         collider2D = rigidbody2D.GetComponent<Collider2D>();
 
@@ -145,16 +169,19 @@ public class PlayerControl : MonoBehaviour {
         groundParticleSystem = groundCheck.GetComponentInChildren<ParticleSystem>();
         wallLeftParticleSystem = sideCheckLeft.GetComponentInChildren<ParticleSystem>();
         wallRightParticleSystem = sideCheckRight.GetComponentInChildren<ParticleSystem>();
+        dashParticleSystem = transform.FindChild("DashParticleSystem").GetComponent<ParticleSystem>();
 
         groundLayerMask = 1 << LayerMask.NameToLayer("Ground");
+
+        playerIndicator = GetComponentInChildren<PlayerIndicatorBehaviour>();
 	}
 
     void OnDestroy()
     {
         try
         {
-            SFXManagerBehaviour.Instance.stopLoop(this.gameObject, wallSlidingSound);
-            SFXManagerBehaviour.Instance.stopLoop(this.gameObject, fallingSound);
+            SFXManagerBehaviour.Instance.stopLoop(new SFXPair(wallSlidingSound, this.gameObject));
+            SFXManagerBehaviour.Instance.stopLoop(new SFXPair(fallingSound, this.gameObject));
         }
         catch
         {
@@ -172,51 +199,10 @@ public class PlayerControl : MonoBehaviour {
         if (debug)
             debugDrawHitBoxes();
 
-        hit = false;
-
-        foreach (int opponentLayerMask in opponentLayerMasks)
-        {
-            hit = Physics2D.Linecast(playerTopLeft, headCheckLeft.position, opponentLayerMask) || Physics2D.Linecast(playerTopRight, headCheckRight.position, opponentLayerMask) || hit;
-            if (hit)
-            {
-                SFXManagerBehaviour.Instance.stopLoop(this.gameObject, wallSlidingSound);
-                SFXManagerBehaviour.Instance.stopLoop(this.gameObject, fallingSound);
-
-                if (!dead)
-                    die(opponentLayerMask);
-            }
-        }
-
-            
-        grounded = Physics2D.Linecast(playerBottomLeft, groundCheckLeft.position, groundLayerMask) || Physics2D.Linecast(playerBottomRight, groundCheckRight.position, groundLayerMask);
-        
-        RaycastHit2D ray;
-        aboveJumpablePlate = false;
-
-        ray = Physics2D.Raycast(playerTopLeft, Vector2.up, platRayHeight, groundLayerMask);
-        if (ray.collider != null)
-        {
-            if (ray.collider.gameObject.CompareTag("FallThroughPlatform"))
-            {
-                fallThroughPlat = ray.collider.gameObject.GetComponent<Collider2D>();
-                aboveJumpablePlate = true;
-            }
-        }
-
-        ray = Physics2D.Raycast(playerTopRight, Vector2.up, platRayHeight, groundLayerMask);
-        if (ray.collider != null)
-        {
-            if (ray.collider.gameObject.CompareTag("FallThroughPlatform"))
-            {
-                fallThroughPlat = ray.collider.gameObject.GetComponent<Collider2D>();
-                aboveJumpablePlate = true;
-            }
-        }
-
-        onLeftWall = Physics2D.Linecast(playerTopLeft, sideCheckTopLeft.position, groundLayerMask) || Physics2D.Linecast(playerBottomLeft, sideCheckBottomLeft.position, groundLayerMask);
-        onRightWall = Physics2D.Linecast(playerTopRight, sideCheckTopRight.position, groundLayerMask) || Physics2D.Linecast(playerBottomRight, sideCheckBottomRight.position, groundLayerMask);
-
-        onWall = onLeftWall || onRightWall;
+        checkHit();
+        checkOnGround();
+        checkOnFallThrough();
+        checkOnWall();
         
         letGoOfJump = !Input.GetButton(jumpKey);
         h = Input.GetAxisRaw(horizontalAxis);
@@ -227,7 +213,6 @@ public class PlayerControl : MonoBehaviour {
             onWall = false;
 
         groundChecker();
-
         wallChecker();
 
         if (keyboard)
@@ -241,7 +226,12 @@ public class PlayerControl : MonoBehaviour {
                 lastPressed = 0;
         }
 
-        down = Input.GetButton(downKey) || Input.GetAxisRaw(downKey) == 1;
+        down = Input.GetButton(downKey) || Input.GetAxisRaw(downTrigger) == 1;
+
+        dash = Input.GetButton(dashKey) || Input.GetAxisRaw(dashTrigger) == 1;
+
+        if (!hit)
+            dashHandler();
 
         //if jump pressed
         if(Input.GetButtonDown(jumpKey))
@@ -253,6 +243,67 @@ public class PlayerControl : MonoBehaviour {
                 doubleJump = true;
         }
 	}
+
+    private void checkHit()
+    {
+        hit = false;
+
+        foreach (int opponentLayerMask in opponentLayerMasks)
+        {
+            hit = Physics2D.Linecast(playerTopLeft, headCheckLeft.position, opponentLayerMask) || Physics2D.Linecast(playerTopRight, headCheckRight.position, opponentLayerMask) || hit;
+            if (hit)
+            {
+                if (!dead)
+                    die(opponentLayerMask);
+
+                break;
+            }
+        }
+    }
+
+    private void checkOnGround()
+    {
+        grounded = Physics2D.Linecast(playerBottomLeft, groundCheckLeft.position, groundLayerMask) || Physics2D.Linecast(playerBottomRight, groundCheckRight.position, groundLayerMask);
+    }
+
+    private void checkOnFallThrough()
+    {
+        RaycastHit2D ray;
+        aboveJumpablePlat = false;
+
+        ray = Physics2D.Raycast(playerTopLeft, Vector2.up, platRayHeight, groundLayerMask);
+        if (ray.collider != null)
+        {
+            if (ray.collider.gameObject.CompareTag("FallThroughPlatform"))
+            {
+                fallThroughPlat = ray.collider.gameObject.GetComponent<Collider2D>();
+                aboveJumpablePlat = true;
+            }
+        }
+
+        ray = Physics2D.Raycast(playerTopRight, Vector2.up, platRayHeight, groundLayerMask);
+        if (ray.collider != null)
+        {
+            if (ray.collider.gameObject.CompareTag("FallThroughPlatform"))
+            {
+                fallThroughPlat = ray.collider.gameObject.GetComponent<Collider2D>();
+                aboveJumpablePlat = true;
+            }
+        }
+    }
+
+    private void checkOnWall()
+    {
+        onLeftWall = Physics2D.Linecast(playerTopLeft, sideCheckTopLeft.position, groundLayerMask) ||
+                        Physics2D.Linecast((playerTopLeft + playerBottomLeft) / 2, (sideCheckTopLeft.position + sideCheckBottomLeft.position) / 2, groundLayerMask) ||
+                        Physics2D.Linecast(playerBottomLeft, sideCheckBottomLeft.position, groundLayerMask);
+
+        onRightWall = Physics2D.Linecast(playerTopRight, sideCheckTopRight.position, groundLayerMask) ||
+                        Physics2D.Linecast((playerTopRight + playerBottomRight) / 2, (sideCheckTopRight.position + sideCheckBottomRight.position) / 2, groundLayerMask) ||
+                        Physics2D.Linecast(playerBottomRight, sideCheckBottomRight.position, groundLayerMask);
+
+        onWall = onLeftWall || onRightWall;
+    }
 
     private void groundChecker()
     {
@@ -278,7 +329,7 @@ public class PlayerControl : MonoBehaviour {
         //if on wall, set gorunded, so we can jump again
         if (onWall)
         {
-            SFXManagerBehaviour.Instance.loopSound(this.gameObject, wallSlidingSound);
+            SFXManagerBehaviour.Instance.loopSound(new SFXPair(wallSlidingSound, this.gameObject));
 
             //reset jumps
             hasJumped = false;
@@ -292,7 +343,7 @@ public class PlayerControl : MonoBehaviour {
         }
         else
         {
-            SFXManagerBehaviour.Instance.stopLoop(this.gameObject, wallSlidingSound);
+            SFXManagerBehaviour.Instance.stopLoop(new SFXPair(wallSlidingSound, this.gameObject));
 
             hasBeenOnWall = false;
         }
@@ -301,7 +352,7 @@ public class PlayerControl : MonoBehaviour {
     void FixedUpdate()
     {
         // If down pressed and on fallthough platofrom, or if enttering from above, remove their collision
-        if (fallThroughPlat != null && ((down && !inAir) || (aboveJumpablePlate && inAir)))
+        if (fallThroughPlat != null && ((down && !inAir) || (aboveJumpablePlat && inAir)))
             Physics2D.IgnoreCollision(GetComponent<Collider2D>(), fallThroughPlat, true);
         else
             Physics2D.IgnoreCollision(GetComponent<Collider2D>(), fallThroughPlat, false);
@@ -330,10 +381,13 @@ public class PlayerControl : MonoBehaviour {
 
     private void die(int killer)
     {
+        SFXManagerBehaviour.Instance.stopLoop(new SFXPair(wallSlidingSound, this.gameObject));
+        SFXManagerBehaviour.Instance.stopLoop(new SFXPair(fallingSound, this.gameObject));
         SFXManagerBehaviour.Instance.playSound(deathSound);
         
         dead = true;
         spriteRenderer.color = Color.grey;
+        dashParticleSystem.Stop();
         GetComponent<BoxCollider2D>().enabled = false;
         anim.SetTrigger("Dead");
 
@@ -341,7 +395,7 @@ public class PlayerControl : MonoBehaviour {
                 
         //screen ripple
         Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
-        viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
+        CameraToPlane.Instance.splashAtPoint(new Vector2(pos.x, pos.y));
     }
 
     private void inputHandler()
@@ -359,32 +413,53 @@ public class PlayerControl : MonoBehaviour {
         // If the player is holding down, apply fall force, unless they're on the floor
         if (down && !grounded)
         {
-            rigidbody2D.AddForce(Vector2.up * -1 * fastFallForce);
+            rigidbody2D.AddForce(Vector2.down * fastFallForce);
+            currentAirSpeed = flumpMaxSpeed;
+            //reduce the players speed
+            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x * (flumpMaxSpeed / airMaxSpeed), rigidbody2D.velocity.y);
+
             //flump loop
-            SFXManagerBehaviour.Instance.loopSound(this.gameObject, fallingSound);
+            SFXManagerBehaviour.Instance.loopSound(new SFXPair(fallingSound, this.gameObject));
         }
         else
-            //SFXManagerBehaviour.Instance.stopLoop(this.gameObject, fallingSound);
-
-        // If the player is changing direction or letting go of controls, stop all horizontal movement, but only on ground
-        if (h != Mathf.Sign(rigidbody2D.velocity.x))
-            rigidbody2D.velocity = new Vector2(0f, rigidbody2D.velocity.y);
-
-        // If the player is changing direction or hasn't reached maxSpeed yet, add a force
-        if (h * rigidbody2D.velocity.x < maxSpeed)
         {
-            //if we're clining to a wall, then add a portion of the force so we don't get stuck into it
-            if (!onWall)
-                rigidbody2D.AddForce(Vector2.right * h * moveForce);
-            else
+            currentAirSpeed = airMaxSpeed;
+            SFXManagerBehaviour.Instance.stopLoop(new SFXPair(fallingSound, this.gameObject));
+        }
+
+        // If the player is changing direction or letting go of controls, stop half  horizontal movement, but only on ground
+        //if (h != Mathf.Sign(rigidbody2D.velocity.x) && !grounded)
+            //rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x / 2, rigidbody2D.velocity.y);
+
+        //airbased movement
+        if (inAir)
+        {
+            //if we're clinging to a wall, then add a portion of the force so we don't get stuck into it
+            if (onWall)
                 rigidbody2D.AddForce(Vector2.right * h * moveForce * 0.25f);
 
-            //flip sprite
-            //Vector3 scale = transform.localScale;
-            //scale.x *= h;
-            //transform.localScale = scale;
+            //else normal air move force
+            // If the player is changing direction or hasn't reached maxSpeed yet, add a force
+            else
+            {
+                if (h * rigidbody2D.velocity.x < currentAirSpeed)
+                    rigidbody2D.AddForce(Vector2.right * h * airMoveForce);
+
+                // If the player's horizontal velocity is greater than the maxSpeed, set it to max speed
+                if (rigidbody2D.velocity.x > maxSpeed)
+                    rigidbody2D.velocity = new Vector2(Mathf.Sign(rigidbody2D.velocity.x) * maxSpeed, rigidbody2D.velocity.y);
+            }
         }
-        
+
+        // ground movement If the player is changing direction or hasn't reached maxSpeed yet, add a force
+        else if (h * rigidbody2D.velocity.x < maxSpeed)
+            //normal move force
+            rigidbody2D.AddForce(Vector2.right * h * moveForce);
+
+        //flip sprite
+        //Vector3 scale = transform.localScale;
+        //scale.x *= h;
+        //transform.localScale = scale;
 
         // If the player's horizontal velocity is greater than the maxSpeed, set it to max speed
         if (rigidbody2D.velocity.x > maxSpeed)
@@ -399,24 +474,22 @@ public class PlayerControl : MonoBehaviour {
         {
             firstTimeOnWall = false;
 
-            //fix wall jumping not reseting double jumps
-            //hasDoubleJumped = false;
-            //landing sound
-
             //screen shake
             if (onRightWall)
             {
+                wallRightParticleSystem.Stop();
                 wallRightParticleSystem.Play();
                 //screen ripple
                 Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
-                viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
+                CameraToPlane.Instance.splashAtPoint(new Vector2(pos.x, pos.y));
             }
             if (onLeftWall)
             {
+                wallLeftParticleSystem.Stop();
                 wallLeftParticleSystem.Play();
                 //screen ripple
                 Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
-                viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
+                CameraToPlane.Instance.splashAtPoint(new Vector2(pos.x, pos.y));
             }
         }
 
@@ -432,45 +505,55 @@ public class PlayerControl : MonoBehaviour {
                 //landing sound
                 SFXManagerBehaviour.Instance.playSound(landingSound);
 
+            groundParticleSystem.Stop();
             groundParticleSystem.Play();
             //screen shake
 
             //screen ripple
             Vector3 pos = Camera.main.WorldToViewportPoint(transform.position);
-            viewingCamera.SendMessage("splashAtPoint", new Vector2(pos.x, pos.y));
+            CameraToPlane.Instance.splashAtPoint(new Vector2(pos.x, pos.y));
         }
         
         //if jump is let go and we are jumping up, then stop veritcal movement
         if (rigidbody2D.velocity.y > 0.2f && letGoOfJump)
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0f);
 
-        //normal air friciton
-        rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x * 4), 0));
+        //normal ground friciton
+        if (!inAir)
+            rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x * 4), 0));
 
         //air friction if h let go
-        if (inAir && h == 0)
-            rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x * 6), 0));
+        //if (inAir && h == 0)
+            //rigidbody2D.AddForce(new Vector2((-rigidbody2D.velocity.x * 6), 0));
 
         if (jump)
         {
             SFXManagerBehaviour.Instance.playSound(jumpSound);
 
             //nulify current force from gravity
-            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
+            rigidbody2D.velocity = Vector2.zero;
+
+            int direction = 1;
 
             //if we are on a wall then jump off it
             if (onWall && !grounded)
             {
-                int direction = 1;
-
                 if (onLeftWall)
                     direction = 1;
 
                 if (onRightWall)
                     direction = -1;
                 
-                rigidbody2D.AddForce(Vector2.right * direction * moveForce * 5);
+                //wall jump force for when pressing away from wall, or not pressing
+                rigidbody2D.AddForce(Vector2.right * direction * moveForce);
+
+                //make direction -h so that we will jump away from wall
+                direction = -1;
             }
+
+            //make x velocity on jump either max or 0
+            //make it away from the wall if on a wall
+            rigidbody2D.velocity = Vector2.right * h * direction * airMaxSpeed;
 
             rigidbody2D.AddForce(Vector2.up * jumpForce);
 
@@ -478,6 +561,7 @@ public class PlayerControl : MonoBehaviour {
             inAir = true;
             hasJumped = true;
         }
+
         if (doubleJump)
         {
             SFXManagerBehaviour.Instance.playSound(dJumpSound);
@@ -485,12 +569,102 @@ public class PlayerControl : MonoBehaviour {
             //nulify current force from gravity
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 0);
 
-            rigidbody2D.AddForce(Vector2.up * jumpForce);
+            rigidbody2D.AddForce(new Vector2(moveForce * h, jumpForce));
 
             doubleJump = false;
             inAir = true;
             hasDoubleJumped = true;
         }
+    }
+
+    private void dashHandler()
+    {
+        float distToDash = dashDistance / (float)dashFrameTime;
+
+        //if dash is being held
+        if (dash)
+        {
+            if (!hasDashed && !isDashing && grounded && (!checkSomethingInTheWay(distToDash) && !checkSomethingInTheWay(-distToDash)))
+                if (h != 0)
+                {
+                    SFXManagerBehaviour.Instance.playSound(dashSound);
+                    isDashing = true;
+                    dashDirection = (int)Mathf.Sign(h);
+                }
+                else if (keyboard && lastPressed != 0)
+                {
+                    SFXManagerBehaviour.Instance.playSound(dashSound);
+                    isDashing = true;
+                    dashDirection = (int)Mathf.Sign(lastPressed);
+                }
+        }
+
+        if (isDashing)
+        {
+            if (checkSomethingInTheWay(distToDash * dashDirection * 2))
+                currentDashDistance = dashDistance; 
+
+            //if we haven't reached the end yet, move further along
+            if ((currentDashDistance < dashDistance) && !inAir)
+                currentDashDistance += Mathf.Abs(move(distToDash * dashDirection));
+            else
+            {
+                rigidbody2D.velocity = Vector2.zero;
+                currentDashDistance = 0;
+                dashDirection = 0;
+                isDashing = false;
+                hasDashed = true;
+            }
+        }
+
+        if (hasDashed)
+        {
+            if (currentDashCoolDown < dashCoolDownTime)
+                currentDashCoolDown++;
+            else
+            {
+                currentDashCoolDown = 0;
+                hasDashed = false;
+            }
+        }
+    }
+
+    private float move(float distance)
+    {
+        //returns the distance we have traveled, if something is in the way, return finished
+
+        //ray cast to see if nothing is in the wy of that distance
+        bool somethingInTheWay = checkSomethingInTheWay(distance);
+        
+        if (somethingInTheWay)
+        {
+            rigidbody2D.velocity = Vector2.zero;
+            return dashDistance;
+        }
+        else
+        {
+            Vector3 pos = transform.position;
+            pos.x += distance;
+            transform.position = pos;
+            return distance;
+        }
+    }
+
+    private bool checkSomethingInTheWay(float distance)
+    {
+        bool somethingInTheWay = false;
+
+        Vector3 dest = transform.position;
+        dest.x += distance;
+
+        foreach (int opponentLayerMask in opponentLayerMasks)
+            if (Physics2D.Linecast(transform.position, dest, opponentLayerMask))
+                somethingInTheWay = true;
+
+        if (Physics2D.Linecast(transform.position, dest, groundLayerMask))
+            somethingInTheWay = true;
+        
+        return somethingInTheWay;
     }
 
     private void debugDrawHitBoxes()
@@ -502,25 +676,27 @@ public class PlayerControl : MonoBehaviour {
         Debug.DrawLine(playerTopRight, playerBottomRight, Color.green);
         Debug.DrawLine(playerBottomRight, playerBottomLeft, Color.green);
         Debug.DrawLine(playerBottomLeft, playerTopLeft, Color.green);
+        
+        Debug.DrawRay(playerTopLeft, Vector2.up * platRayHeight, Color.grey);
+        Debug.DrawRay(playerTopRight, Vector2.up * platRayHeight, Color.grey);
 
         Debug.DrawLine(playerTopLeft, headCheckLeft.position, Color.red);
         Debug.DrawLine(headCheckLeft.position, headCheckRight.position, Color.red);
         Debug.DrawLine(playerTopRight, headCheckRight.position, Color.red);
 
         Debug.DrawLine(playerTopLeft, sideCheckTopLeft.position, Color.blue);
-        Debug.DrawLine(sideCheckTopLeft.position, sideCheckBottomLeft.position, Color.blue);
+        Debug.DrawLine((playerTopLeft + playerBottomLeft) / 2, (sideCheckTopLeft.position + sideCheckBottomLeft.position) / 2, Color.blue);
         Debug.DrawLine(sideCheckBottomLeft.position, playerBottomLeft, Color.blue);
+        Debug.DrawLine(sideCheckTopLeft.position, sideCheckBottomLeft.position, Color.blue);
 
         Debug.DrawLine(playerTopRight, sideCheckTopRight.position, Color.blue);
-        Debug.DrawLine(sideCheckTopRight.position, sideCheckBottomRight.position, Color.blue);
+        Debug.DrawLine((playerTopRight + playerBottomRight) / 2, (sideCheckTopRight.position + sideCheckBottomRight.position) / 2, Color.blue);
         Debug.DrawLine(sideCheckBottomRight.position, playerBottomRight, Color.blue);
+        Debug.DrawLine(sideCheckTopRight.position, sideCheckBottomRight.position, Color.blue);
 
         Debug.DrawLine(playerBottomLeft, groundCheckLeft.position, Color.yellow);
         Debug.DrawLine(groundCheckLeft.position, groundCheckRight.position, Color.yellow);
         Debug.DrawLine(groundCheckRight.position, playerBottomRight, Color.yellow);
-
-        Debug.DrawRay(playerTopLeft, Vector2.up * platRayHeight, Color.grey);
-        Debug.DrawRay(playerTopRight, Vector2.up * platRayHeight, Color.grey);
     }
 
     public void setHit(bool val)
@@ -538,22 +714,28 @@ public class PlayerControl : MonoBehaviour {
         hit = false;
         dead = false;
 
-        invertColors();
+        //stop trail so we don't get nasty cross screen jaggys
+        dashParticleSystem.Stop();
+
+        resetColors();
 
         GetComponent<BoxCollider2D>().enabled = true;
         lastPressed = 0;
         anim.SetTrigger("Reset");
+        
+        playerIndicator.startFading();
     }
 
-    public void invertColors()
+    public void resetColors()
     {
-        //invert color
-        player.color.color = (new Color(1 - player.color.color.r, 1 - player.color.color.g, 1 - player.color.color.b, 1));
-
         spriteRenderer.color = player.color.color;
         groundParticleSystem.startColor = player.color.color;
         wallLeftParticleSystem.startColor = player.color.color;
         wallRightParticleSystem.startColor = player.color.color;
+        Color dashColor = player.color.color;
+        dashColor.a = 150;
+        dashParticleSystem.startColor = dashColor;
+        dashParticleSystem.Play();
     }
 
     public int getPlayerNo()
@@ -580,6 +762,9 @@ public class PlayerControl : MonoBehaviour {
         groundParticleSystem.startColor = player.color.color;
         wallLeftParticleSystem.startColor = player.color.color;
         wallRightParticleSystem.startColor = player.color.color;
+        Color dashColor = player.color.color;
+        dashColor.a = 150;
+        dashParticleSystem.startColor = dashColor;
 
         playerNo = plyer.playerNo;
         teamNo = plyer.teamNo;
@@ -596,7 +781,19 @@ public class PlayerControl : MonoBehaviour {
         //set up the inputs for this player
         horizontalAxis = plyer.playerInputScheme.inputs[PlayerInput.HorizontalInput].inputName;
         jumpKey = plyer.playerInputScheme.inputs[PlayerInput.UpInput].inputName;
-        downKey = plyer.playerInputScheme.inputs[PlayerInput.DownInput].inputName;
+        downKey = plyer.playerInputScheme.inputs[PlayerInput.DownInputButton].inputName;
+        dashKey = plyer.playerInputScheme.inputs[PlayerInput.DashInputButton].inputName;
+
+        if (plyer.playerInputScheme.inputType != InputType.Keyboard)
+        {
+            downTrigger = plyer.playerInputScheme.inputs[PlayerInput.DownInputTrigger].inputName;
+            dashTrigger = plyer.playerInputScheme.inputs[PlayerInput.DashInputTrigger].inputName;
+        }
+        else
+        {
+            downTrigger = downKey;
+            dashTrigger = dashKey;
+        }
 
         if (plyer.playerInputScheme.inputs.ContainsKey(PlayerInput.RightInput) && plyer.playerInputScheme.inputs.ContainsKey(PlayerInput.LeftInput))
         {
@@ -604,6 +801,9 @@ public class PlayerControl : MonoBehaviour {
             leftKey = plyer.playerInputScheme.inputs[PlayerInput.LeftInput].inputName;
             keyboard = true;
         }
+
+        playerIndicator.setPlayer(playerNo, player.color.color);
+        playerIndicator.startFading();
     }
 
     private void setLayerMask(string opMask)

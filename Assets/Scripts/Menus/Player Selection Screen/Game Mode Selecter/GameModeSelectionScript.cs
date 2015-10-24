@@ -9,12 +9,12 @@ public class GameModeSelectionScript : MonoBehaviour {
 
     private GameModeSelectionScriptManager gameModeSelectionManager;
 
-    private GameMode[] gameModes = { GameMode.Stock, GameMode.Koth, GameMode.Race };
-    private int currentGameMode = 0;
-    private int stocks = 4;
+    private GameMode[] gameModes = { GameMode.Stock, GameMode.Race, GameMode.Koth };
+    private int[] stocks = { 4, 4, 8 };
+    private int currentGameModeIndex = 0;
     private bool teamMode = false;
     private int prevGameMode;
-    private int prevStocks;
+    private int[] prevStocks;
     private bool prevTeam;
     
     private int playerNo;
@@ -33,6 +33,8 @@ public class GameModeSelectionScript : MonoBehaviour {
     void Start()
     {
         gameModeSelectionManager = GetComponent<GameModeSelectionScriptManager>();
+
+        prevStocks = new int [stocks.Length];
 
         //display options
         teamOption.setOptionText("Teams");
@@ -86,9 +88,9 @@ public class GameModeSelectionScript : MonoBehaviour {
                     break;
                 case "Horizontal":
                         if (value < 0)
-                            changeOption(1);
-                        if (value > 0)
                             changeOption(-1);
+                        if (value > 0)
+                            changeOption(1);
                     break;
                 case "Vertical":
                         if (value < 0)
@@ -138,8 +140,8 @@ public class GameModeSelectionScript : MonoBehaviour {
 
         //send slected value (with selected color) and blank next value
         teamOption.setValueText("<color=" + selectedColor + ">" + (teamMode ? "Yes" : "No") + "</color>", "");
-        gameModeOption.setValueText("<color=" + selectedColor + ">" + System.Enum.GetName(typeof(GameMode), currentGameMode) + "s" + "</color>", "");
-        gameModeValueOption.setValueText("<color=" + selectedColor + ">" + stocks.ToString() + "</color>", "");
+        gameModeOption.setValueText("<color=" + selectedColor + ">" + System.Enum.GetName(typeof(GameMode), gameModes[currentGameModeIndex]) + "s" + "</color>", "");
+        gameModeValueOption.setValueText("<color=" + selectedColor + ">" + stocks[currentGameModeIndex] + "</color>", "");
 
         if (active)
         {
@@ -150,12 +152,12 @@ public class GameModeSelectionScript : MonoBehaviour {
                     teamOption.setValueText("<color=" + highlightedColor + ">" + (teamMode ? "Yes" : "No") + "</color>", "<color=" + unSelectedColor + ">" + (!teamMode ? "Yes" : "No") + "</color>");
                     break;
                 case optionSelected.gameMode:
-                    gameModeOption.setValueText("<color=" + unSelectedColor + ">" + System.Enum.GetName(typeof(GameMode), getNextGameMode(1)) + "</color>");
-                    gameModeOption.setValueText("<color=" + highlightedColor + ">" + System.Enum.GetName(typeof(GameMode), currentGameMode) + "s" + "</color>", "<color=" + unSelectedColor + ">" + System.Enum.GetName(typeof(GameMode), getNextGameMode(-1)) + "</color>");
+                    gameModeOption.setValueText("<color=" + unSelectedColor + ">" + System.Enum.GetName(typeof(GameMode), getNextGameMode(-1)) + "</color>");
+                    gameModeOption.setValueText("<color=" + highlightedColor + ">" + System.Enum.GetName(typeof(GameMode), gameModes[currentGameModeIndex]) + "s" + "</color>", "<color=" + unSelectedColor + ">" + System.Enum.GetName(typeof(GameMode), getNextGameMode(1)) + "</color>");
                     break;
                 case optionSelected.gameModeValue:
-                    gameModeValueOption.setValueText("<color=" + unSelectedColor + ">" + getNextStock(1) + "</color>");
-                    gameModeValueOption.setValueText("<color=" + highlightedColor + ">" + stocks + "</color>", "<color=" + unSelectedColor + ">" + getNextStock(-1) + "</color>");
+                    gameModeValueOption.setValueText("<color=" + unSelectedColor + ">" + getNextStock(-1) + "</color>");
+                    gameModeValueOption.setValueText("<color=" + highlightedColor + ">" + stocks[currentGameModeIndex] + "</color>", "<color=" + unSelectedColor + ">" + getNextStock(1) + "</color>");
                     break;
             }
         }
@@ -169,11 +171,11 @@ public class GameModeSelectionScript : MonoBehaviour {
                 teamMode = !teamMode;
                 break;
             case optionSelected.gameMode:
-                currentGameMode = getNextGameMode(direction);
+                currentGameModeIndex = getNextGameMode(direction);
                 updateGameModeValue();
                 break;
             case optionSelected.gameModeValue:
-                stocks = getNextStock(direction);
+                stocks[currentGameModeIndex] = getNextStock(direction);
                 break;
         }
         updateOptions();
@@ -207,7 +209,7 @@ public class GameModeSelectionScript : MonoBehaviour {
 
     private int getNextGameMode(int direction)
     {
-        int mode = currentGameMode - direction;
+        int mode = currentGameModeIndex + direction;
 
         if (mode < 0)
             mode = gameModes.Length - 1;
@@ -220,13 +222,13 @@ public class GameModeSelectionScript : MonoBehaviour {
 
     private int getNextStock(int direction)
     {
-        int stock = stocks - direction;
+        int stock = stocks[currentGameModeIndex] + direction;
 
         if (stock <= 0)
-            stock = 0;
+            stock = 1;
 
         if (stock >= 100)
-            stock = 100;
+            stock = 99;
 
         return stock;
     }
@@ -235,7 +237,7 @@ public class GameModeSelectionScript : MonoBehaviour {
     {
         //set correct text for game mode
         string optionText;
-        switch(gameModes[currentGameMode])
+        switch(gameModes[currentGameModeIndex])
         {
             case GameMode.Stock:
                 optionText = "Lives";
@@ -253,14 +255,21 @@ public class GameModeSelectionScript : MonoBehaviour {
         gameModeValueOption.setOptionText(optionText);
 
         //update visuliser to new gamemode
-        GameObject.Find("Music Visualiser").SendMessage("setGameMode", currentGameMode);
+        GameObject.Find("Music Visualiser").SendMessage("setGameMode", gameModes[currentGameModeIndex]);
     }
 
     private void cancelChanges()
     {
-        currentGameMode = prevGameMode;
-        stocks = prevStocks;
+        //reset values
+        currentGameModeIndex = prevGameMode;
+
+        for (int i = 0; i < prevStocks.Length; i++)
+            stocks[i] = prevStocks[i];
+
         teamMode = prevTeam;
+
+        //update visuliser to new gamemode
+        GameObject.Find("Music Visualiser").SendMessage("setGameMode", gameModes[currentGameModeIndex]);
 
         confirmChanges();
     }
@@ -287,8 +296,12 @@ public class GameModeSelectionScript : MonoBehaviour {
         //set up the inputs for this player
         modeSwitchKey = player.inputs[PlayerInput.ChangeModeInput].inputName;
 
-        prevGameMode = currentGameMode;
-        prevStocks = stocks;
+        //log old values
+        prevGameMode = currentGameModeIndex;
+
+        for (int i = 0; i < stocks.Length; i++)
+            prevStocks[i] = stocks[i];
+
         prevTeam = teamMode;
 
         active = true;
@@ -299,22 +312,23 @@ public class GameModeSelectionScript : MonoBehaviour {
 
     public GameMode getGameMode()
     {
-        return gameModes[currentGameMode];
+        return gameModes[currentGameModeIndex];
     }
 
     public void setGameMode(GameMode gMode)
     {
-        currentGameMode = (int)gMode;
+        currentGameModeIndex = (int)gMode;
+        updateOptions();
     }
 
     public int getStockCount()
     {
-        return stocks;
+        return stocks[currentGameModeIndex];
     }
 
     public void setStockCount(int count)
     {
-        stocks = count;
+        stocks[currentGameModeIndex] = count;
     }
 
     public bool getTeamMode()

@@ -211,11 +211,11 @@ public class PauseMenuScript : MonoBehaviour {
 
     private void quitGame()
     {
-#if UNITY_EDITOR || SwitchMode || UNITY_WEBPLAYER || UNITY_WEBGL
         unpause();
+#if UNITY_EDITOR || SwitchMode || UNITY_WEBPLAYER || UNITY_WEBGL
         Application.LoadLevel(0);
 #else
-                Application.Quit();
+        Application.Quit();
 #endif
     }
 }

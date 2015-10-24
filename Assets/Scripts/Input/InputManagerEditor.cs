@@ -75,7 +75,8 @@ public class InputManagerEditor : MonoBehaviour {
     {
         Horizontal = 1,
         Vertical = 2,
-        Flump = 10,
+        FlumpTrigger = 10,
+        DashTrigger =  10,
         WiggleHorizontal = 4,
         WiggleVertical = 5
     }
@@ -88,7 +89,9 @@ public class InputManagerEditor : MonoBehaviour {
 
     public enum ControllerButtonDef
     {
-        Jump =  4,
+        Jump = 0,
+        FlumpButton= 10,
+        DashButton = 10,
         ChangeMode = 3,
         Submit = 0,
         Cancel = 1,
@@ -102,13 +105,16 @@ public class InputManagerEditor : MonoBehaviour {
     {
         Horizontal = 1,
         Vertical = 2,
-        Flump = 9,
-        Cancel = Flump
+        FlumpTrigger = 9,
+        DashTrigger = 9,
+        Cancel = FlumpTrigger
     }
 
     public enum ControllerLeftHalfButtonDef
     {
         Jump = 4,
+        FlumpButton = 9,
+        DashButton = 9,
         ChangeMode = 8,
         Submit = 4,
         Pause = 6,
@@ -120,13 +126,16 @@ public class InputManagerEditor : MonoBehaviour {
     {
         Horizontal = 4,
         Vertical = 5,
-        Flump = 10,
-        Cancel = Flump
+        DashTrigger = 10,
+        FlumpTrigger = 10,
+        Cancel = FlumpTrigger
     }
 
     public enum ControllerRightHalfButtonDef
     {
         Jump = 5,
+        DashButton = 10,
+        FlumpButton = 10,
         ChangeMode = 9,
         Submit = 5,
         Pause = 7,
@@ -179,16 +188,16 @@ public class InputManagerEditor : MonoBehaviour {
         AddAxis(new InputAxis() { name = "Mouse X", gravity = 3, dead = 0.19f, sensitivity = 3, snap = true, type = AxisType.MouseMovement, axis = 1 });
         AddAxis(new InputAxis() { name = "Mouse Y", gravity = 3, dead = 0.19f, sensitivity = 3, snap = true, type = AxisType.MouseMovement, axis = 2 });
 
-        SetupKeyBoardControlls(1, "a", "d", "w", "s", "e", "q", "x", "escape", "space");
-        SetupKeyBoardControlls(2, "left", "right", "up", "down", "page down", "delete", "end", "escape", "space");
-        SetupKeyBoardControlls(3, "u", "o", "8", "i", "9", "7", "k", "escape", "space");
-        SetupKeyBoardControlls(4, "v", "n", "g", "b", "h", "f", "m", "escape", "space");
+        SetupKeyBoardControlls(1, "a", "d", "w", "s", "s", "e", "q", "x", "escape", "space");
+        SetupKeyBoardControlls(2, "left", "right", "up", "down", "down", "page down", "delete", "end", "escape", "space");
+        SetupKeyBoardControlls(3, "u", "o", "8", "i", "i", "9", "7", "k", "escape", "space");
+        SetupKeyBoardControlls(4, "v", "n", "g", "b", "b", "h", "f", "m", "escape", "space");
 
         SetupNonSharedControllers();
         SetupSharedControllers();
     }
 
-    private static void SetupKeyBoardControlls(int index, string left, string right, string up, string down, string submit, string cancel, string changeMode, string pause, string startGame)
+    private static void SetupKeyBoardControlls(int index, string left, string right, string up, string down, string dash, string submit, string cancel, string changeMode, string pause, string startGame)
     {
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Horizontal", descriptiveName = "Menu navagation only", negativeButton = left, positiveButton = right, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Vertical", descriptiveName = "Menu navagation only", negativeButton = down, positiveButton = up, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
@@ -196,6 +205,7 @@ public class InputManagerEditor : MonoBehaviour {
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Right", positiveButton = right, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Jump", positiveButton = up, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Flump", positiveButton = down, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
+        AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Dash", positiveButton = dash, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Submit", positiveButton = submit, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " Cancel", positiveButton = cancel, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
         AddAxis(new InputAxis() { name = "Keyboard " + index.ToString() + " ChangeMode", positiveButton = changeMode, gravity = 1000, dead = 0.001f, sensitivity = 1000, type = AxisType.KeyOrMouseButton });
@@ -226,7 +236,7 @@ public class InputManagerEditor : MonoBehaviour {
 
         try
         {
-            if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.Flump)
+            if ((ControllerAxisDef)Enum.Parse(typeof(ControllerAxisDef), axisName) == ControllerAxisDef.FlumpTrigger)
             {
                 inputAxis.dead = 0.19f;
                 inputAxis.sensitivity = 100;

@@ -15,15 +15,16 @@ public class PlayerStats
 
     public void addKO(int victim)
     {
-        KOs.Add(victim);
+        if (victim != id)
+            KOs.Add(victim);
     }
 
     public void addTKO(int attacker)
     {
-        TKOs.Add(attacker);
-
-        //if we KO'd ourselves
-        if (attacker == id)
+        if (attacker != id)
+            TKOs.Add(attacker);
+        else
+            //we KO'd ourselves
             SDs++;
     }
 

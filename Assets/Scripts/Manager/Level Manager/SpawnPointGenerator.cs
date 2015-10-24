@@ -4,9 +4,8 @@ using System.Collections.Generic;
 
 [ExecuteInEditMode]
 public class SpawnPointGenerator : MonoBehaviour {
-
-    //generate the spawn point game objects
-
+    //GENERATES DEFAULT SPAWN POINTS FOR PLAYERS
+    //THIS CODE WILL NOT BE PRESENT WHEN LEVEL IS IMPORTED
     public Sprite debugSprite;
 
     //Here is a private reference only this class can access
@@ -23,6 +22,28 @@ public class SpawnPointGenerator : MonoBehaviour {
                 instance = GameObject.FindObjectOfType<SpawnPointGenerator>();
             return instance;
         }
+    }
+
+    public void setSpawnPoints(List<GameObject> spawns, bool showSpawnPoints)
+    {
+        destroyPoints();
+
+        //copy children and make new spawn set
+        for (int i = 2; i <= 20; i++)
+            for (int j = 0; j < 19; j++)
+                if (spawns[j].transform.childCount == i)
+                    generatePoints(i, 1, showSpawnPoints, spawns[j].transform);
+    }
+
+    public void debugSetSpawnPoints(List<GameObject> spawns, bool showSpawnPoints)
+    {
+        debugDestroyPoints();
+
+        //copy children and make new spawn set
+        for (int i = 2; i <= 20; i++)
+            for (int j = 0; j < 19; j++)
+                if (spawns[j].transform.childCount == i)
+                    generatePoints(i, 1, showSpawnPoints, spawns[j].transform);
     }
 
 	public void generateSpawnPoints(float spawnAeraSize, bool showSpawnPoints)
@@ -43,6 +64,17 @@ public class SpawnPointGenerator : MonoBehaviour {
 	
     private void generatePoints(int playerCount, float size, bool debug)
     {
+        generatePoints(playerCount, size, debug, null);
+    }
+
+    private void generatePoints(int playerCount, float size, bool debug, Transform trans)
+    {
+        List<Transform> transforms = new List<Transform>();
+        //get children of trans
+        if (trans != null)
+            foreach (Transform tran in trans)
+                transforms.Add(tran);
+
         //generate container for spawn points
         GameObject spawn = new GameObject(playerCount + "P Spawn");
         spawn.transform.parent = transform;
@@ -67,7 +99,14 @@ public class SpawnPointGenerator : MonoBehaviour {
             //then offsetting it so that we get it between -6 and 6 (the -6 part)
             //then we are scaling it up so that the highest and lowest bounds are always -6 and 6 (* -(6/(width-6)))
             //we make that part minus, so that we get spawns from left to right
-            point.transform.position = new Vector3(((width * j) - (magicNo / 2)) * -((magicNo / 2) / (width - (magicNo / 2))) * size, -(magicNo / 3), 0);
+
+            Vector3 pos = new Vector3(((width * j) - (magicNo / 2)) * -((magicNo / 2) / (width - (magicNo / 2))) * size, -(magicNo / 3), 0);
+
+            if (trans != null)
+                if (transforms[i-1] != null)
+                    pos = transforms[i-1].position;
+
+            point.transform.position = pos;
 
             if (debug)
             {

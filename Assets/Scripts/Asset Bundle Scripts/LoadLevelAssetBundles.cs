@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
+using System.IO;
 using System.Collections;
 
 public class LoadLevelAssetBundles : MonoBehaviour {
+
+    public GameObject stockLevel, raceLevel, kothLevel;
 
     //Here is a private reference only this class can access
     private static LoadLevelAssetBundles instance;
@@ -18,44 +21,109 @@ public class LoadLevelAssetBundles : MonoBehaviour {
             return instance;
         }
     }
-
+    
     public IEnumerator loadLevelABs()
     {
-        yield return StartCoroutine(loadAsset("Music", "Koth.mp3", MusicTrack.KothGame));
+#if UNITY_EDITOR
+#else
+        //asign default levels
+        yield return StartCoroutine(assignLevel(null, GameMode.Stock));
+        yield return StartCoroutine(assignLevel(null, GameMode.Race));
+        yield return StartCoroutine(assignLevel(null, GameMode.Koth));
+#endif
+        string path = "Levels";
+
+        foreach (GameMode gameMode in System.Enum.GetValues(typeof(GameMode)))
+            yield return StartCoroutine(loadABsInFolder(path + "/" + System.Enum.GetName(typeof(GameMode), gameMode) + "/", gameMode));
     }
 
-    private IEnumerator loadAsset(string path, string asset, MusicTrack musicTrack)
+    private IEnumerator loadABsInFolder(string path, GameMode gameMode)
     {
-        yield return StartCoroutine(LoadAssetFromAssetBundle.Instance.DownloadAssetBundle<AudioClip>(asset, path + "/", "file:///" + Application.dataPath + "AssetBundles/" + path + ".unity3d", 0));
-        yield return StartCoroutine(assignTrack(musicTrack));
-    }
+        //scan for all the asset bundles in this folder, and then assign al the elvels in each asset bundle
 
-    private IEnumerator assignTrack(MusicTrack musicTrack)
-    {
-        MusicManagerBehaviour musicManager = MusicManagerBehaviour.Instance;
-        GameObject GO = new GameObject(musicTrack.ToString());
-        GO.transform.SetParent(musicManager.transform, false);
-        GO.AddComponent<AudioSource>();
-        GO.GetComponent<AudioSource>().clip = (AudioClip)LoadAssetFromAssetBundle.Instance.Obj;
-
-        switch (musicTrack)
+#if UNITY_EDITOR
+#else
+        path = Path.Combine("AssetBundles", path);
+#endif
+        if (Directory.Exists(Directory.GetParent(Path.Combine(Application.dataPath, path)).ToString()))
         {
-            case MusicTrack.KothGame:
-                musicManager.kothMusic = GO.GetComponent<AudioSource>();
+            string[] files = Directory.GetFiles(Path.Combine(Application.dataPath, path));
+            yield return null;
+
+            foreach (string file in files)
+            {
+                if (Path.GetExtension(file) != ".manifest" && Path.GetExtension(file) != ".meta" && Path.GetExtension(file) != ".txt")
+                {
+                    yield return StartCoroutine(loadAsset(path + Path.GetFileName(file), gameMode));
+#if UNITY_EDITOR
+                    if (Path.GetExtension(file) == ".prefab")
+                        yield return StartCoroutine(assignLevel(gameMode));
+                    else
+                        yield return StartCoroutine(extractLevels(gameMode));
+#else
+                    yield return StartCoroutine(extractLevels(gameMode));
+#endif
+                }
+                yield return null;
+            }
+        }
+        yield return null;
+    }
+
+    private IEnumerator loadAsset(string path, GameMode gameMode)
+    {
+        int version = BundleVersionReader.readVersion(Path.Combine(Application.dataPath, path));
+        yield return StartCoroutine(LoadAssetFromAssetBundle.Instance.DownloadAssetBundle<GameObject>("", path, "file:///" + Path.Combine(Application.dataPath, path), version));
+    }
+    
+    private IEnumerator extractLevels(GameMode gameMode)
+    {
+        //load all the levels from the current AB
+
+        AssetBundle assetBundle = LoadAssetFromAssetBundle.Instance.getBundle();
+
+        yield return null;
+
+        //foreach level in ab
+        foreach (string asset in assetBundle.GetAllAssetNames())
+        {
+            GameObject level = assetBundle.LoadAsset<GameObject>(asset);
+            yield return StartCoroutine(assignLevel(level, gameMode));
+            yield return null;
+        }
+
+        LoadAssetFromAssetBundle.Instance.finishedWithBundle();    
+    }
+
+    private IEnumerator assignLevel(GameMode gameMode)
+    {
+        yield return StartCoroutine(assignLevel(LoadAssetFromAssetBundle.Instance.Obj, gameMode));
+    }
+
+    private IEnumerator assignLevel(Object obj, GameMode gameMode)
+    {
+        GameObject backUpLevel = null;
+
+        CustomLevelParser levelParser = CustomLevelParser.Instance;
+
+        switch (gameMode)
+        {
+            case GameMode.Stock:
+                backUpLevel = stockLevel;
                 break;
-            case MusicTrack.RaceGame:
-                musicManager.raceMusic = GO.GetComponent<AudioSource>();
+            case GameMode.Race:
+                backUpLevel = raceLevel;
                 break;
-            case MusicTrack.StockGame:
-                musicManager.stockMusic = GO.GetComponent<AudioSource>();
-                break;
-            case MusicTrack.PlayerSelectionMenu:
-                musicManager.playerSelectionMusic = GO.GetComponent<AudioSource>();
-                break;
-            case MusicTrack.MainMenu:
-                musicManager.menuMusic = GO.GetComponent<AudioSource>();
+            case GameMode.Koth:
+                backUpLevel = kothLevel;
                 break;
         }
+
+        if (obj != null)
+            yield return StartCoroutine(levelParser.parseLevel((GameObject)obj));
+        else if (backUpLevel != null)
+            yield return StartCoroutine(levelParser.parseLevel(backUpLevel));
+
         yield return null;
     }
 }

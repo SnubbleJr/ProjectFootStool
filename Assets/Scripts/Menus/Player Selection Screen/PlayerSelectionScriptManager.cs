@@ -66,6 +66,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
 
     private PlayerSprite[] pSprites;
     private PlayerColor[] pColors;
+    private PlayerColor[] activepColors;
 
     private SortedDictionary<int, PlayerSelectionScript> playerSelecters = new SortedDictionary<int, PlayerSelectionScript>();
     private Dictionary<PlayerSelectionScript, GameObject> joinCanvases = new Dictionary<PlayerSelectionScript, GameObject>();   //maps join image to a full controller
@@ -82,6 +83,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         foreach(Sprite sprite in sprites)
         {
             PlayerSprite ps = new PlayerSprite();
+            ps.setAvailable(true);
             ps.sprite = sprite;
             pss.Add(ps);
         }
@@ -91,18 +93,12 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         foreach(Color color in colors)
         {
             PlayerColor pc = new PlayerColor();
+            pc.setAvailable(true);
             pc.color = color;
             pcs.Add(pc);
         }
         pColors = pcs.ToArray();
-
-	    //set all things to available
-        foreach (PlayerSprite playerSprite in pSprites)
-            playerSprite.setAvailable(true);
-
-        foreach (PlayerColor playerColor in pColors)
-            playerColor.setAvailable(true);
-
+        
         //create player selectors for current inputs
         createPlayerSelecters();
 
@@ -287,6 +283,8 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         }
 
         updatePlayerNos();
+        updateTeamColors();
+        updateTeamNos();
 
         updatePlayerSelectersPos();
     }
@@ -329,9 +327,7 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         //update player selecters playerNo based on the order it is in the dict
         int i = 1;
         foreach (KeyValuePair<int, PlayerSelectionScript> pair in playerSelecters)
-        {
             pair.Value.setPlayerNo(i++);
-        }
     }
 
     public void updateTeamNos()
@@ -339,6 +335,31 @@ public class PlayerSelectionScriptManager : MonoBehaviour
         //if a team game, then apply a rudimentry team difference, half one team, half the other
         foreach (KeyValuePair<int, PlayerSelectionScript> pair in playerSelecters)
             pair.Value.setTeam(team);
+    }
+
+    private void updateTeamColors()
+    {
+        //changes the amount of colors avaiable pased on the current team value
+        if (team)
+        {
+            //update pColors availbility with whatever has been happening while active was short
+            if (activepColors != null)
+                for (int i = 0; i > activepColors.Length; i++)
+                    pColors[9 * (i + 1)] = activepColors[i];
+
+            activepColors = pColors;
+        }
+        else
+            activepColors = makeShortColors();
+    }
+
+    private PlayerColor[] makeShortColors()
+    {
+        PlayerColor[] colors = new PlayerColor[20];
+        for (int i = 0; i < colors.Length; i++)
+            colors[i] = pColors[Mathf.RoundToInt(9.5f * i)];
+
+        return colors;
     }
 
     public Player[] getReadyPlayers()
@@ -474,7 +495,102 @@ public class PlayerSelectionScriptManager : MonoBehaviour
     public void setTeamMode(bool val)
     {
         team = val;
+        updateTeamColors();
         updateTeamNos();
+    }
+
+    public void returnPlayerSprite(int index)
+    {
+        pSprites[index].setAvailable(true);
+    }
+
+    public void returnPlayerColor(int index)
+    {
+        activepColors[index].setAvailable(true);
+    }
+
+    public int getNextPlayerSprite(int index, int direction)
+    {
+        //gets next aviaoble and sets it
+
+        pSprites[index].setAvailable(true);
+        
+        int newIndex = tryGetNextSprite(index, direction);
+
+        pSprites[newIndex].setAvailable(false);
+
+        return newIndex;
+    }
+    
+    public int tryGetNextSprite(int index, int direction)
+    {
+        return tryGetNextSprite(index, direction, false);
+    }
+
+    public int tryGetNextSprite(int index, int direction, bool ignoreAvailablity)
+    {
+        //just returns the next available
+
+        int newIndex = index + direction;
+
+        if (newIndex >= pSprites.Length)
+            newIndex -= pSprites.Length;
+        if (newIndex < 0)
+            newIndex += pSprites.Length;
+
+        if (ignoreAvailablity)
+            return newIndex;
+
+        if (pSprites[newIndex].getAvailable())
+            return newIndex;
+        else
+            //if direction is 0, then we are probing to see if the current index is available, return -1 if it isn't
+            if (direction == 0)
+                return -1;
+            else
+                return tryGetNextSprite(newIndex, direction);
+    }
+
+    public int getNextPlayerColor(int index, int direction)
+    {
+        //gets next aviaoble and sets it
+
+        activepColors[index].setAvailable(true);
+                
+        int newIndex = tryGetNextColor(index, direction);
+
+        activepColors[newIndex].setAvailable(false);
+
+        return newIndex;
+    }
+
+    public int tryGetNextColor(int index, int direction)
+    {
+        return tryGetNextColor(index, direction, false);
+    }
+
+    public int tryGetNextColor(int index, int direction, bool ignoreAvailablity)
+    {
+        //just returns the next available
+
+        int newIndex = index + direction;
+
+        if (newIndex >= activepColors.Length)
+            newIndex -= activepColors.Length;
+        if (newIndex < 0)
+            newIndex += activepColors.Length;
+
+        if (ignoreAvailablity)
+            return newIndex;
+
+        if (activepColors[newIndex].getAvailable())
+            return newIndex;
+        else
+            //if direction is 0, then we are probing to see if the current index is available, return -1 if it isn't
+            if (direction == 0)
+                return -1;
+            else
+                return tryGetNextColor(newIndex, direction);
     }
 
     public PlayerSprite[] getPlayerSprites()
@@ -484,6 +600,12 @@ public class PlayerSelectionScriptManager : MonoBehaviour
 
     public PlayerColor[] getPlayerColors()
     {
-        return pColors;
+        return activepColors;
+    }
+
+    public PlayerColor getTeamColor(int index)
+    {
+        //returns the corresponding overal team color
+        return makeShortColors()[((int)(index / 19))*2];
     }
 }

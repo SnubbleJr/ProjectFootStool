@@ -1,0 +1,79 @@
+https://youtu.be/qforYEqPTFU
+
+make controlls clearer							X
+
+remove color invert							X
+
+higher jump height							X
+
+more aircontrol?							X
+
+bigger players?
+	outlines probbaly first
+
+make players more visable						X
+
+koth hilll cololr change on state					X
+
+player in hill should have paritcle effect behind their score		X
+
+color scoreboard panel							X
+
+middle player issue?							
+	randomise player pos? (need to re arrange numbers)		X
+	need to worry about GUI though, too disorenting?
+
+alpha out player numbers when player is behind them			X
+
+race speed up								X
+
+raise the race cieling, and reduce the number of platforms spawned	X
+
+fix 'most from' and crown on panel					X
+
+knockback on flump? stun with that? (probs not stun)
+
+wall jumping push off							X
+
+clicking of right stick rotation
+
+increase defult value of koths to 6 or something			X
+
+fix final panel not showing peoples					X
+
+allow levels to have custom spawn points				X
+
+fix not sliding on walls						X
+(more ray casting)
+
+double space on ready for next round					X
+
+sprite white bg								X
+
+have countdown come from angles
+(up, down, left, right, then go from indside camera outwards.		X
+have all text go from big to small)
+
+have winner gui as new gui?
+
+impliment intro
+
+dash
+
+stop looping sfx on pause/hit, resume on unpause			X
+
+debug canavas to see inputs when in built game
+
+set all spawns to random on round start					X
+		
+reordering gui socre elemtns						X
+
+player indicator overhead on respawn					X
+
+first to indicator in koth
+
+sound play on point gain if near winnng					X
+
+stat panel getting stuck on submit					X?
+
+stop FF looping on death						X

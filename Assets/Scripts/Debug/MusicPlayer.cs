@@ -6,6 +6,11 @@ public class MusicPlayer : MonoBehaviour {
     //forces music manager to start playing music
     public MusicTrack track;
 
+    void Awake()
+    {
+        playMusic();
+    }
+
     void OnEnable()
     {
         AssetBundleLoaderBehaviour.musicLoaded += playMusic;

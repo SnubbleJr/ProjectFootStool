@@ -4,6 +4,8 @@ using System.Collections;
 
 public class MusicManagerBehaviour : MonoBehaviour {
 
+    public AudioSource stockMusicIntro, kothMusicIntro, raceMusicIntro, customMusicIntro;
+
     public AudioSource menuMusic, playerSelectionMusic, stockMusic, kothMusic, raceMusic, customMusic;
 
     private AudioMixer masterMixer;
@@ -17,11 +19,15 @@ public class MusicManagerBehaviour : MonoBehaviour {
     private float reverbMax = 0;
     private float reverbMin = -10000;
     private float currentReverb ;
-        
+
+    private bool playingIntro = false;
+
     private bool paused = false;
     private bool gameOver = false;
 
-    private const float invokeInterval = 0.02f;
+    private int customTrackBPM;
+
+    private BeatDetector beatDetector;
 
     //Here is a private reference only this class can access
     private static MusicManagerBehaviour instance;
@@ -41,6 +47,8 @@ public class MusicManagerBehaviour : MonoBehaviour {
 
     public delegate void MusicManagerDelegate();
     public static event MusicManagerDelegate songStarted;
+    public static event MusicManagerDelegate songPaused;
+    public static event MusicManagerDelegate songUnpaused;
     public static event MusicManagerDelegate songStopped;
 
     private AudioSource layerToAlter;
@@ -58,6 +66,7 @@ public class MusicManagerBehaviour : MonoBehaviour {
         BeatDetector.beatDetected += beatDetected;
         MusicVolumeSliderElement.volumeChanged += volumeChanged;
         masterMixer = MasterAudioManagerBehaviour.Instance.getMasterMixer();
+        beatDetector = GetComponent<BeatDetector>();
 	}
 
     void Update()
@@ -79,22 +88,28 @@ public class MusicManagerBehaviour : MonoBehaviour {
 
         //if paused
         if (paused)
-            if ((currentLowPass * 0.9f) > lowPassCutoffMin)
-                currentLowPass = Mathf.Lerp(currentLowPass, lowPassCutoffMin, speed * Time.unscaledDeltaTime);
+            if (playingIntro)
+                pauseMusic();
             else
-                currentLowPass = lowPassCutoffMin;
+                if ((currentLowPass * 0.9f) > lowPassCutoffMin)
+                    currentLowPass = Mathf.Lerp(currentLowPass, lowPassCutoffMin, speed * Time.unscaledDeltaTime);
+                else
+                    currentLowPass = lowPassCutoffMin;
         else
-            if (currentLowPass < (lowPassCutoffMax * 0.9f))
-                currentLowPass = Mathf.Lerp(currentLowPass, lowPassCutoffMax, speed * Time.unscaledDeltaTime);
+            if (playingIntro)
+                unpauseMusic();
             else
-                currentLowPass = lowPassCutoffMax;
+                if (currentLowPass < (lowPassCutoffMax * 0.9f))
+                    currentLowPass = Mathf.Lerp(currentLowPass, lowPassCutoffMax, speed * Time.unscaledDeltaTime);
+                else
+                    currentLowPass = lowPassCutoffMax;
 
         masterMixer.SetFloat("musicLowPassCuttoff", currentLowPass);
     }
 
     private void reverber()
     {
-        float speed = 3f;
+        float speed = 2f;
 
         if (gameOver)
             if ((currentReverb * 0.9f) > reverbMin)
@@ -161,6 +176,8 @@ public class MusicManagerBehaviour : MonoBehaviour {
     
     public void playMusic(MusicTrack musicTrack)
     {
+        currentTrack = musicTrack;
+
         switch (musicTrack)
         {
             case MusicTrack.MainMenu:
@@ -194,32 +211,38 @@ public class MusicManagerBehaviour : MonoBehaviour {
                 break;
             case MusicTrack.StockGame:
                 if (stockMusic != null)
-                    playMusic(stockMusic);
+                    playMusic(stockMusicIntro, stockMusic);
                 break;
             case MusicTrack.KothGame:
                 if (kothMusic != null)
-                    playMusic(kothMusic);
+                    playMusic(kothMusicIntro, kothMusic);
                 break;
             case MusicTrack.RaceGame:
                 if (raceMusic != null)
-                    playMusic(raceMusic);
+                    playMusic(raceMusicIntro, raceMusic);
                 break;
             case MusicTrack.Custom:
                 if (customMusic != null)
-                playMusic(customMusic);
+                    playMusic(customMusicIntro, customMusic);
                 break;
             default:
                 break;
         }
-
-        currentTrack = musicTrack;
     }
 
-    public void playMusic(MusicTrack musicTrack, AudioClip customTrack)
+    public void playMusic(MusicTrack musicTrack, AudioClip customIntro, AudioClip customTrack, int customBPM)
     {
-        if (musicTrack == MusicTrack.Custom)
-            customMusic.clip = customTrack;
+        if (customBPM == 0)
+            customBPM = 124;
 
+        customTrackBPM = customBPM;
+
+        if (musicTrack == MusicTrack.Custom)
+        {
+            customMusicIntro.clip = customIntro;
+            customMusic.clip = customTrack;
+        }
+        
         playMusic(musicTrack);
     }
 
@@ -237,6 +260,56 @@ public class MusicManagerBehaviour : MonoBehaviour {
             songStarted();
     }
 
+    private void playMusic(AudioSource intro, AudioSource main)
+    {
+        if (main != null)
+        {
+            stopMusic();
+
+            if (intro != null)
+            {
+                intro.Play();
+                StartCoroutine(playMain(main, intro.clip.length));
+
+                currentSource = intro;
+
+                playingIntro = true;
+
+                if (songStarted != null)
+                    songStarted();
+
+                StartCoroutine(introFinished(intro.clip.length, main));
+            }
+            else
+            {
+                main.Play();
+
+                currentSource = main;
+
+                playingIntro = false;
+
+                if (songStarted != null)
+                    songStarted();
+            }
+        }
+    }
+
+    private IEnumerator playMain(AudioSource main, float time)
+    {
+        yield return new WaitForSeconds(time);
+        main.Play();
+    }
+
+    private IEnumerator introFinished(float time, AudioSource main)
+    {
+        yield return new WaitForSeconds(time);
+        currentSource = main;
+        playingIntro = false;
+
+        if (songStarted != null)
+            songStarted();
+    }
+
     private void loadLayer(AudioSource layer, AudioSource audioSource)
     {
         //load up the layer in the background
@@ -245,9 +318,33 @@ public class MusicManagerBehaviour : MonoBehaviour {
         layer.Play();
     }
 
-    private void volumeChanged()
+    public void volumeChanged(bool save)
     {
         masterMixer.SetFloat("musicVol", (MusicVolumeSliderElement.volume - 1) * 80);
+    }
+
+    public void pauseMusic()
+    {
+        if (currentSource != null)
+            if (currentSource.isPlaying)
+            {
+                currentSource.Pause();
+
+                if (songPaused != null)
+                    songPaused();
+            }
+    }
+
+    public void unpauseMusic()
+    {
+        if (currentSource != null)
+            if (!currentSource.isPlaying)
+            {
+                currentSource.UnPause();
+
+                if (songUnpaused != null)
+                    songUnpaused();
+            }
     }
 
     public void stopMusic()
@@ -293,5 +390,20 @@ public class MusicManagerBehaviour : MonoBehaviour {
         }
 
         currentReverb = reverbMax;
+    }
+
+    public int getCustomBPM()
+    {
+        return customTrackBPM;
+    }
+
+    public int getBPM()
+    {
+        return beatDetector.getBPM();
+    }
+
+    public float timeTillNextBeat()
+    {
+        return beatDetector.timeTillNextBeat();
     }
 }

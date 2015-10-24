@@ -5,7 +5,7 @@ public class MasterVolumeSliderElement : MonoBehaviour {
 
     public static float volume = 1f;
 
-    public delegate void MasterVolumeSliderDelegate();
+    public delegate void MasterVolumeSliderDelegate(bool save);
     public static event MasterVolumeSliderDelegate volumeChanged;
 
     private MenuScript menuScript;
@@ -23,7 +23,7 @@ public class MasterVolumeSliderElement : MonoBehaviour {
         transform.parent.SendMessage("finished");
 
         if (volumeChanged != null)
-            volumeChanged();
+            volumeChanged(true);
     }
 
     //set volume if hovered over
@@ -37,7 +37,7 @@ public class MasterVolumeSliderElement : MonoBehaviour {
             volume = 1 - (float)menuScript.getIndex(this.gameObject) / (float)(menuScript.getEntryLength());
 
             if (volumeChanged != null)
-                volumeChanged();
+                volumeChanged(false);
         }
     }
 }

@@ -6,7 +6,7 @@ public class StockGameMode : MonoBehaviour, IGameMode {
 
     //game mode is stock, everytime a player is hit they lose a life, the last person left standing wins
 
-    public int stockCount;
+    private int stockCount;
 
     private bool team = false;
 
@@ -18,61 +18,51 @@ public class StockGameMode : MonoBehaviour, IGameMode {
     private PlayerColor[] playerColors;
 
 	// Use this for initialization
-	void OnEnable ()
+	void OnEnable()
     {
         playerManager = GetComponent<PlayerManagerBehaviour>();
 	}
-	
-    void OnGUI()
+
+    private void setScores()
     {
-        GUI.skin = playerManager.skin;
+        int[] spawnOrder = playerManager.getSpawnOrder();
 
-        //player gui
+        string teamPrefix = team ? "T" : "P";
 
-        if (playerControls != null)
+        clearScores();
+        
+        //set score based on the order that they spawned
+        for (int i = 0; i < playerControls.Length; i++)
         {
-            //if we get odd numbers of double the no of players (1,3,5,7 out of 8) then we get nice quartiles
-            int width = Screen.width / (playerControls.Length * 2);
+            int index = 0;
 
-            int j = -1;
+            for (int j = 0; j < spawnOrder.Length; j++)
+                if (i == spawnOrder[j])
+                    index = j;
+            PlayerControl playerControl = playerControls[index];
+            GameModeCanavsBehaviour.Instance.setPlayer(playerControl.getPlayerNo(), playerControl.getColor(), teamPrefix, playerControl.getTeamNo());
+            GameModeCanavsBehaviour.Instance.setPlayerScore(playerControl.getPlayerNo(), playerControl.getScore());
+        }
+    }
 
-            for (int i = 0; i < playerControls.Length; i++)
-            {
-                j = j + 2;
+    private void clearScores()
+    {
+        foreach (PlayerControl playerControl in playerControls)
+            GameModeCanavsBehaviour.Instance.unsetPlayer(playerControl.getPlayerNo());
+    }
 
-                playerColors[i].color.a = 1;
-                Color color1 = playerColors[i].color;
-                Color color2 = Color.black;
+    private void updateScores()
+    {
+        foreach (PlayerControl playerControl in playerControls)
+        {
+            int playerNo = playerControl.getPlayerNo();
 
-                //if player is hit, grey out their score
-                if (playerControls[i].getHit())
-                {
-                    color1.a = 0.5f;
-                    color2.a = 0.5f;
-                }
+            GameModeCanavsBehaviour.Instance.setPlayerScore(playerNo, playerControl.getScore());
 
-                GUI.contentColor = color2;
-                GUI.Label(new Rect((width * j) + 2, 5, 50, 30), playerControls[i].getScore().ToString());
-                GUI.contentColor = color1;
-                GUI.Label(new Rect((width * j), 3, 50, 30), playerControls[i].getScore().ToString());
-
-                if (team)
-                {
-                    //draw team in little number underneath
-                    GUI.contentColor = color2;
-                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15>T " + playerControls[i].getTeamNo().ToString() + "</size>");
-                    GUI.contentColor = color1;
-                    GUI.Label(new Rect((width * j), 4 + 20, 50, 30), "<size=15>T " + playerControls[i].getTeamNo().ToString() + "</size>");
-                }
-                else
-                {
-                    //draw player in little number underneath
-                    GUI.contentColor = color2;
-                    GUI.Label(new Rect((width * j) + 1, 5 + 20, 50, 30), "<size=15>P " + playerControls[i].getTeamNo().ToString() + "</size>");
-                    GUI.contentColor = color1;
-                    GUI.Label(new Rect((width * j), 4 + 20, 50, 30), "<size=15>P " + playerControls[i].getTeamNo().ToString() + "</size>");
-                }
-            }
+            if (playerControl.getHit())
+                GameModeCanavsBehaviour.Instance.setPlayerInactive(playerNo);
+            else
+                GameModeCanavsBehaviour.Instance.setPlayerActive(playerNo);
         }
     }
 
@@ -80,7 +70,7 @@ public class StockGameMode : MonoBehaviour, IGameMode {
     public Transform playerHit(PlayerControl playerControl)
     {
         playerControl.decreaseScore();
-
+        
         int alivePlayerCount = 0;
         int currentAlivePlayer = 0;
 
@@ -91,7 +81,7 @@ public class StockGameMode : MonoBehaviour, IGameMode {
         for (int i = 0; i < playerControls.Length; i++)
         {
             //if we found someone who hasn't died
-            if (playerControls[i].enabled == true)
+            if (playerControls[i].getHit() == false)
             {
                 alivePlayerCount++;
                 currentAlivePlayer = i;
@@ -105,17 +95,15 @@ public class StockGameMode : MonoBehaviour, IGameMode {
             }
         }
 
+        updateScores();
+
         //if only one team remains
         //or
         //if only 1 player left alive, round is over
         if (aliveTeamCount <=1 || alivePlayerCount <= 1)
-        {
             return players[currentAlivePlayer].transform;
-        }
         else
-        {
             return null;
-        }
     }
 
     public int checkForWinner()
@@ -145,6 +133,8 @@ public class StockGameMode : MonoBehaviour, IGameMode {
                 }
             }
         }
+
+        updateScores();
 
         //if only one team remains
         //or
@@ -182,9 +172,7 @@ public class StockGameMode : MonoBehaviour, IGameMode {
             }
             //else it's a team we know, and add this player ot the team
             else
-            {
                 teams[playerControl.getTeamNo()].Add(playerControl);
-            }
         }
 
         //we're in team mode if we've actually got teams!
@@ -192,6 +180,8 @@ public class StockGameMode : MonoBehaviour, IGameMode {
             team = true;
         else
             team = false;
+
+        setScores();
     }
 
     public void setColors(PlayerColor[] col)
@@ -206,5 +196,12 @@ public class StockGameMode : MonoBehaviour, IGameMode {
 
     public void restartRound()
     {
+        setScores();
+        updateScores();
+    }
+
+    public void endGame()
+    {
+        clearScores();
     }
 }

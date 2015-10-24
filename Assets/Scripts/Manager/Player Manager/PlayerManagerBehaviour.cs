@@ -7,17 +7,14 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
     public bool debug;
     public GameObject playerPrefab;
-    public int firstTo = 5;
     public GUISkin skin;
-
-    public SFX countDownSound = SFX.Countdown;
-    public SFX countDownGoSound = SFX.Go;
 
     private GameObject[] spawnPointHolders; //holds the different points for players
     private Transform[] spawns;
 
     private GameObject[] players;
     private PlayerStats[] playerStats;
+    private List<int> spawnOrder = new List<int>();  //to keep track of what order we are spawning in
 
     private PlayerControl[] playerControls;
 
@@ -39,11 +36,8 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     private int winner;
     private bool gameOver;
     private bool displayWinner = false;
-    private int countDownStart = 5;
-    private int countDownTime;
-    private bool countingDown = false;
-    
-	// Use this for initialization
+
+    // Use this for initialization
     void Awake()
     {
         if (playerPrefab == null)
@@ -62,14 +56,12 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     {
         InputManagerBehaviour.playerAdded += playerAdded;
         InputManagerBehaviour.playerRemoved += playerRemoved;
-        BeatDetector.beatDetected += countDown;
     }
 
     void OnDisable()
     {
         InputManagerBehaviour.playerAdded -= playerAdded;
         InputManagerBehaviour.playerRemoved -= playerRemoved;
-        BeatDetector.beatDetected -= countDown;
     }
 
     public void startGame(Player[] Players, GameMode mode, bool teamMode, int scoreAmount)
@@ -88,11 +80,48 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         GameObject[] changingColorObjects = GameObject.FindGameObjectsWithTag("ChangeableColor");
 
         playerColors = getPlayerColors(Players);
+        
+        //initilise palyers into the world
+        spawnPlayers(Players);
+        
+        initialseCameras();
 
+        playerControls = initilialsePlayerControl(Players);
+
+        //reseting values
+        Time.timeScale = 1;
+
+        GetComponentInChildren<CountdownBehaviour>().startCountdown();
+
+        foreach (GameObject obj in changingColorObjects)
+            obj.SendMessage("startFade");
+
+        //now set the camera to not follow disabled players
+        mainCamera.startedGame = false;
+
+        setGameMode(mode, scoreAmount);
+    }
+
+    public void countDownFinished()
+    {
+        //called when countdown has reached 0
+
+        mainCamera.startedGame = true;
+
+        foreach (PlayerControl playerControl in playerControls)
+        {
+            if (playerControl)
+                playerControl.enabled = true;
+        }
+    }
+
+    private void spawnPlayers(Player[] Players)
+    {
         //set players and spawn them
         players = new GameObject[Players.Length];
         playerStats = new PlayerStats[Players.Length];
-        spawns = selectSpawns(Players.Length);        
+        spawns = selectSpawns(Players.Length);
+
         //we have to invert the spawn locations, as they go backwards
         for (int i = 0; i < players.Length; i++)
         {
@@ -102,22 +131,29 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             stat.connected = true;
             playerStats[i] = stat;
         }
-        
-        initialseCameras();
 
-        playerControls = initilialsePlayerControl(Players);
+        //reorder players in random order
+        List<int> usedSpawns = new List<int>();
 
-        //reseting values
-        Time.timeScale = 1;
-        countDownTime = countDownStart;
-        countingDown = true;
-        foreach (GameObject obj in changingColorObjects)
-            obj.SendMessage("startFade");
+        for (int i = 0; i < players.Length; i++)
+        {
+            int j;
 
-        //now set the camera to not follow disabled players
-        mainCamera.startedGame = false;
+            //if 2 players, we want to ensure same spawns
+            if (players.Length == 2)
+                j = i;
+            else
+                j = getSpawn();
 
-        setGameMode(mode, scoreAmount);
+            while (usedSpawns.Contains(j))
+                j = getSpawn();
+
+            usedSpawns.Add(j);
+
+            players[i].transform.position = spawns[j].position;
+        }
+        //log the order we spawned so we can re arrange the ui
+        spawnOrder = usedSpawns;
     }
 
     private void playerAdded(PlayerInputScheme scheme)
@@ -235,74 +271,28 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         gameMode.setColors(playerColors);
     }
 
-    private void countDown(bool onBeat)
-    {
-        if (countingDown)
-        {
-            //countdown to 0
-            if (countDownTime > 0)
-            {
-                SFXManagerBehaviour.Instance.playSound(countDownSound);
-                countDownTime--;
-            }
-            else
-            {
-                //wehen hit 0, set to -1 so go on screen disapears
-                countDownTime = -1;
-                countingDown = false;
-            }
-
-            //checked at 0, so players are active on go
-            if (countDownTime == 0)
-            {
-                SFXManagerBehaviour.Instance.playSound(countDownGoSound);
-
-                mainCamera.startedGame = true;
-
-                foreach (PlayerControl playerControl in playerControls)
-                {
-                    if (playerControl)
-                        playerControl.enabled = true;
-                }
-            }
-        }
-    }
-
     void OnGUI()
     {
         GUI.skin = skin;
-
-        if (countDownTime > 0)
-        {
-            GUI.Label(new Rect((Screen.width / 2) - 23, Screen.height / 2 + 2, 50, 30), "<color=black>" + countDownTime.ToString() + "</color>");
-            GUI.Label(new Rect((Screen.width / 2) - 25, Screen.height / 2, 50, 30), "<color=white>" + countDownTime.ToString() + "</color>");
-        }
-
-        if (countDownTime == 0)
-        {
-            GUI.Label(new Rect((Screen.width / 2) - 48, Screen.height / 2 + 2, 100, 30), "<color=black>GO!</color>");
-            GUI.Label(new Rect((Screen.width / 2) - 50, Screen.height / 2, 100, 30), "<color=yellow>GO!</color>");
-        }
-                
         if (gameOver && displayWinner)
         {
             if (winner != 0)
             {
                 if (team)
                 {
-                    GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50),   "<color=black>Team " + winner + " has won!</color>");
-                    GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50),       "<color=white>Team " + winner + " has won!</color>");
+                    GUI.Label(new Rect((Screen.width / 2) - 248, (Screen.height / 2) + 2, 500, 50), "<color=black>Team " + winner + " has won!</color>");
+                    GUI.Label(new Rect((Screen.width / 2) - 250, (Screen.height / 2), 500, 50), "<color=white>Team " + winner + " has won!</color>");
                 }
                 else
                 {
-                    GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50),   "<color=black>Player " + winner + " has won!</color>");
-                    GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50),       "<color=white>Player " + winner + " has won!</color>");
+                    GUI.Label(new Rect((Screen.width / 2) - 248, (Screen.height / 2) + 2, 500, 50), "<color=black>Player " + winner + " has won!</color>");
+                    GUI.Label(new Rect((Screen.width / 2) - 250, (Screen.height / 2), 500, 50), "<color=white>Player " + winner + " has won!</color>");
                 }
             }
             else
             {
-                GUI.Label(new Rect((Screen.width / 2) - 248, Screen.height / 2 + 2, 500, 50),   "<color=black>No contest!</color>");
-                GUI.Label(new Rect((Screen.width / 2) - 250, Screen.height / 2, 500, 50),       "<color=white>No contest!</color>");
+                GUI.Label(new Rect((Screen.width / 2) - 248, (Screen.height / 2) + 2, 500, 50), "<color=black>No contest!</color>");
+                GUI.Label(new Rect((Screen.width / 2) - 250, (Screen.height / 2), 500, 50), "<color=white>No contest!</color>");
             }
         }
     }
@@ -344,9 +334,9 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         logKO(playerControl, opponent);
 
         playerControl.enabled = false;
-        
+
         Transform winnerTrans = null;
-                
+
         //call the current game mode with player hit
         winnerTrans = gameMode.playerHit(playerControl);
 
@@ -384,44 +374,74 @@ public class PlayerManagerBehaviour : MonoBehaviour {
             Camera.main.gameObject.SendMessage("setFade", false);
 
             foreach (GameObject obj in fadingColorObjects)
-            {
                 obj.SendMessage("setFade", false);
-            }
 
             mainCamera.resetZoom();
-            gameMode.restartRound();
+
+            List<int> usedSpawns = new List<int>();
 
             for (int i = 0; i < players.Length; i++)
             {
-                respawnPlayer(i);
+                int j;
+
+                //if 2 players, we want to ensure same spawns
+                if (players.Length == 2)
+                    j = i;
+                else
+                    j = getSpawn();
+
+                while (usedSpawns.Contains(j))
+                    j = getSpawn();
+
+                usedSpawns.Add(j);
+
+                respawnPlayer(i, j);
             }
+
+            //log the order we spawned so we can re arrange the ui
+            spawnOrder = usedSpawns;
+
+            gameMode.restartRound();
         }
+    }
+
+    private int getSpawn()
+    {
+        int spawn = (int)Random.Range(0, spawns.Length);
+        if (spawn >= spawns.Length)
+            spawn = spawns.Length - 1;
+        return spawn;
     }
 
     private IEnumerator respawnPlayerDelayed(PlayerControl playerControl, float time)
     {
-        int i = System.Array.IndexOf(playerControls, playerControl);
+        int playerIndex = System.Array.IndexOf(playerControls, playerControl);
 
         yield return new WaitForSeconds(time);
 
-        respawnPlayer(i);
+        respawnPlayer(playerIndex, playerIndex);
     }
 
-    private void respawnPlayer(int i)
+    private void respawnPlayer(int playerIndex, int spawnIndex)
     {
         if (!gameOver)
         {
             //don't respawn if stock game and no stocks
             //so only respawn if more than 1 stock or not playing stock game
-            if (playerControls[i].getScore() > 0 || stockGame.enabled == false)
+            if (playerControls[playerIndex].getScore() > 0 || stockGame.enabled == false)
             {
-                players[i].transform.position = spawns[i].position;
-                playerControls[i].enabled = true;
-                playerControls[i].respawn();
+                players[playerIndex].transform.position = spawns[spawnIndex].position;
+                playerControls[playerIndex].enabled = true;
+                playerControls[playerIndex].respawn();
             }
         }
     }
-    
+
+    public int[] getSpawnOrder()
+    {
+        return spawnOrder.ToArray();
+    }
+
     public void StopMatch()
     {
         //public way to call end game, if this has happened, the match has been forfitted
@@ -431,24 +451,14 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
     private void endMatch()
     {
-        LevelManagerBehaviour.Instance.resetLevels();
+        SFXManagerBehaviour.Instance.stopAllLoops();
 
-        try
-        {
-            SFXManagerBehaviour.Instance.stopAllLoops();
-        }
-        catch
-        {
-        }
         MusicManagerBehaviour.Instance.setGameOver(true);
 
-        foreach (GameObject player in players)
-            Destroy(player);
-
-        //disable countdown incase it was still showing
-        countDownTime = -1;
-
-        gameOver = true;
+        foreach (PlayerControl playerControl in playerControls)
+            playerControl.enabled = false;
+        
+        gameMode.endGame();
 
         //set all gamemodes to false
         stockGame.enabled = false;
@@ -457,6 +467,8 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         kothGame.enabled = false;
 
         raceGame.enabled = false;
+        
+        gameOver = true;
 
         playerStatsManager.enabled = false;
 
@@ -484,7 +496,7 @@ public class PlayerManagerBehaviour : MonoBehaviour {
         //if not no contest
         if (winner != 0)
         {
-            if (kothGame.enabled == true)
+            if (kothGame.enabled)
             {
                 foreach (GameObject obj in fadingColorObjects)
                     obj.SendMessage("setFade", true);
@@ -498,13 +510,18 @@ public class PlayerManagerBehaviour : MonoBehaviour {
 
     public void endGame()
     {
+        LevelManagerBehaviour.Instance.resetLevels();
+
+        foreach (GameObject player in players)
+            Destroy(player);
+
         GameObject.Find("Menu Manager").GetComponent<MainMenuScript>().endGame();
 
         displayWinner = false;
-        
+
         //temp measure
         mainCamera.resetZoom();
-        
+
         displayResults();
     }
 
@@ -544,5 +561,10 @@ public class PlayerManagerBehaviour : MonoBehaviour {
     public int getWinner()
     {
         return winner;
+    }
+
+    public GameObject[] getPlayers()
+    {
+        return players;
     }
 }

@@ -17,7 +17,10 @@ public enum PlayerInput
     HorizontalInput,
     VerticalInput,
     UpInput,
-    DownInput,
+    DownInputTrigger,
+    DashInputTrigger,
+    DownInputButton,
+    DashInputButton,
     LeftInput,
     RightInput,
     SubmitInput,
@@ -134,7 +137,8 @@ public class InputManagerBehaviour : MonoBehaviour {
                     {PlayerInput.LeftInput,         new InputAxisAndButtons {axis = false, inputName = inputString + " Left", shortName = "Left", inUse = false}},
                     {PlayerInput.RightInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " Right", shortName = "Right", inUse = false}}, 
                     {PlayerInput.UpInput,           new InputAxisAndButtons {axis = false, inputName = inputString + " Jump", shortName = "Jump", inUse = false}}, 
-                    {PlayerInput.DownInput,         new InputAxisAndButtons {axis = false, inputName = inputString + " Flump", shortName = "Flump", inUse = false}},
+                    {PlayerInput.DownInputButton,   new InputAxisAndButtons {axis = false, inputName = inputString + " Flump", shortName = "Flump", inUse = false}},
+                    {PlayerInput.DashInputButton,   new InputAxisAndButtons {axis = false, inputName = inputString + " Dash", shortName = "Dash", inUse = false}},
                     {PlayerInput.SubmitInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " Submit", shortName = "Submit", inUse = false}},
                     {PlayerInput.CancelInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " Cancel", shortName = "Cancel", inUse = false}},
                     {PlayerInput.ChangeModeInput,   new InputAxisAndButtons {axis = false, inputName = inputString + " ChangeMode", shortName = "ChangeMode", inUse = false}},
@@ -157,20 +161,25 @@ public class InputManagerBehaviour : MonoBehaviour {
             inputType = InputType.ControllerFull,
             inputs = new Dictionary<PlayerInput, InputAxisAndButtons>
             {
-                {PlayerInput.HorizontalInput,   new InputAxisAndButtons {axis = true,inputName = inputString + " Horizontal", shortName = "Horizontal", inUse = false}}, 
-                {PlayerInput.VerticalInput,     new InputAxisAndButtons {axis = true,inputName = inputString + " Vertical", shortName = "Vertical", inUse = false}},
-                {PlayerInput.WiggleHorizontalInput,   new InputAxisAndButtons {axis = true,inputName = inputString + " WiggleHorizontal", shortName = "WiggleHorizontal", inUse = false}}, 
-                {PlayerInput.WiggleVerticalInput,     new InputAxisAndButtons {axis = true,inputName = inputString + " WiggleVertical", shortName = "WiggleVertical", inUse = false}},
+                
+                {PlayerInput.DownInputTrigger,      new InputAxisAndButtons {axis = true, inputName = inputString + " FlumpTrigger", shortName = "Flump", inUse = false}},
+                {PlayerInput.DashInputTrigger,      new InputAxisAndButtons {axis = true, inputName = inputString + " DashTrigger", shortName = "Dash", inUse = false}},
+
+                {PlayerInput.HorizontalInput,       new InputAxisAndButtons {axis = true,inputName = inputString + " Horizontal", shortName = "Horizontal", inUse = false}}, 
+                {PlayerInput.VerticalInput,         new InputAxisAndButtons {axis = true,inputName = inputString + " Vertical", shortName = "Vertical", inUse = false}},
+                {PlayerInput.WiggleHorizontalInput, new InputAxisAndButtons {axis = true,inputName = inputString + " WiggleHorizontal", shortName = "WiggleHorizontal", inUse = false}}, 
+                {PlayerInput.WiggleVerticalInput,   new InputAxisAndButtons {axis = true,inputName = inputString + " WiggleVertical", shortName = "WiggleVertical", inUse = false}},
             
-                {PlayerInput.UpInput,           new InputAxisAndButtons {axis = false, inputName = inputString + " Jump", shortName = "Jump", inUse = false}}, 
-                {PlayerInput.DownInput,         new InputAxisAndButtons {axis = false, inputName = inputString + " Flump", shortName = "Flump", inUse = false}},
-                {PlayerInput.SubmitInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " Submit", shortName = "Submit", inUse = false}},
-                {PlayerInput.CancelInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " Cancel", shortName = "Cancel", inUse = false}},
-                {PlayerInput.ChangeModeInput,   new InputAxisAndButtons {axis = false, inputName = inputString + " ChangeMode", shortName = "ChangeMode", inUse = false}},
-                {PlayerInput.PauseInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " Pause", shortName = "Pause", inUse = false}},
-                {PlayerInput.SplitControlInput1,new InputAxisAndButtons {axis = false, inputName = inputString + " SplitControl1", shortName = "SplitControl1", inUse = false}},
-                {PlayerInput.SplitControlInput2,new InputAxisAndButtons {axis = false, inputName = inputString + " SplitControl2", shortName = "SplitControl2", inUse = false}},
-                {PlayerInput.StartGameInput,    new InputAxisAndButtons {axis = false, inputName = inputString + " StartGame", shortName = "StartGame", inUse = false}}
+                {PlayerInput.UpInput,               new InputAxisAndButtons {axis = false, inputName = inputString + " Jump", shortName = "Jump", inUse = false}}, 
+                {PlayerInput.DownInputButton,       new InputAxisAndButtons {axis = false, inputName = inputString + " FlumpButton", shortName = "Flump", inUse = false}},
+                {PlayerInput.DashInputButton,       new InputAxisAndButtons {axis = false, inputName = inputString + " DashButton", shortName = "Dash", inUse = false}},
+                {PlayerInput.SubmitInput,           new InputAxisAndButtons {axis = false, inputName = inputString + " Submit", shortName = "Submit", inUse = false}},
+                {PlayerInput.CancelInput,           new InputAxisAndButtons {axis = false, inputName = inputString + " Cancel", shortName = "Cancel", inUse = false}},
+                {PlayerInput.ChangeModeInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " ChangeMode", shortName = "ChangeMode", inUse = false}},
+                {PlayerInput.PauseInput,            new InputAxisAndButtons {axis = false, inputName = inputString + " Pause", shortName = "Pause", inUse = false}},
+                {PlayerInput.SplitControlInput1,    new InputAxisAndButtons {axis = false, inputName = inputString + " SplitControl1", shortName = "SplitControl1", inUse = false}},
+                {PlayerInput.SplitControlInput2,    new InputAxisAndButtons {axis = false, inputName = inputString + " SplitControl2", shortName = "SplitControl2", inUse = false}},
+                {PlayerInput.StartGameInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " StartGame", shortName = "StartGame", inUse = false}}
             }
         };
     }
@@ -185,18 +194,22 @@ public class InputManagerBehaviour : MonoBehaviour {
             controller = controllerNo,
             inputType = (left) ? InputType.ControllerHalfL : InputType.ControllerHalfR,
             inputs = new Dictionary<PlayerInput, InputAxisAndButtons>
-            {
-                {PlayerInput.HorizontalInput,   new InputAxisAndButtons {axis = true,inputName = inputString + " Horizontal", shortName = "Horizontal", inUse = false}},
-                {PlayerInput.VerticalInput,     new InputAxisAndButtons {axis = true,inputName = inputString + " Vertical", shortName = "Vertical", inUse = false}},
-                {PlayerInput.CancelInput,       new InputAxisAndButtons {axis = true,inputName = inputString + " Cancel", shortName = "Cancel", inUse = false}},
+            {                
+                {PlayerInput.DownInputTrigger,      new InputAxisAndButtons {axis = true, inputName = inputString + " FlumpTrigger", shortName = "Flump", inUse = false}},
+                {PlayerInput.DashInputTrigger,      new InputAxisAndButtons {axis = true, inputName = inputString + " DashTrigger", shortName = "Dash", inUse = false}},
+
+                {PlayerInput.HorizontalInput,       new InputAxisAndButtons {axis = true,inputName = inputString + " Horizontal", shortName = "Horizontal", inUse = false}},
+                {PlayerInput.VerticalInput,         new InputAxisAndButtons {axis = true,inputName = inputString + " Vertical", shortName = "Vertical", inUse = false}},
+                {PlayerInput.CancelInput,           new InputAxisAndButtons {axis = true,inputName = inputString + " Cancel", shortName = "Cancel", inUse = false}},
             
-                {PlayerInput.UpInput,           new InputAxisAndButtons {axis = false, inputName = inputString + " Jump", shortName = "Jump", inUse = false}}, 
-                {PlayerInput.DownInput,         new InputAxisAndButtons {axis = false, inputName = inputString + " Flump", shortName = "Flump", inUse = false}},
-                {PlayerInput.SubmitInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " Submit", shortName = "Submit", inUse = false}},
-                {PlayerInput.ChangeModeInput,   new InputAxisAndButtons {axis = false, inputName = inputString + " ChangeMode", shortName = "ChangeMode", inUse = false}},
-                {PlayerInput.PauseInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " Pause", shortName = "Pause", inUse = false}},
-                {PlayerInput.SplitControlInput1,new InputAxisAndButtons {axis = false, inputName = inputString + " JoinControl", shortName = "JoinControl", inUse = false}},
-                {PlayerInput.StartGameInput,    new InputAxisAndButtons {axis = false, inputName = inputString + " StartGame", shortName = "StartGame", inUse = false}}
+                {PlayerInput.UpInput,               new InputAxisAndButtons {axis = false, inputName = inputString + " Jump", shortName = "Jump", inUse = false}}, 
+                {PlayerInput.DownInputButton,       new InputAxisAndButtons {axis = false, inputName = inputString + " FlumpButton", shortName = "Flump", inUse = false}},
+                {PlayerInput.DashInputButton,       new InputAxisAndButtons {axis = false, inputName = inputString + " DashButton", shortName = "Dash", inUse = false}},
+                {PlayerInput.SubmitInput,           new InputAxisAndButtons {axis = false, inputName = inputString + " Submit", shortName = "Submit", inUse = false}},
+                {PlayerInput.ChangeModeInput,       new InputAxisAndButtons {axis = false, inputName = inputString + " ChangeMode", shortName = "ChangeMode", inUse = false}},
+                {PlayerInput.PauseInput,            new InputAxisAndButtons {axis = false, inputName = inputString + " Pause", shortName = "Pause", inUse = false}},
+                {PlayerInput.SplitControlInput1,    new InputAxisAndButtons {axis = false, inputName = inputString + " JoinControl", shortName = "JoinControl", inUse = false}},
+                {PlayerInput.StartGameInput,        new InputAxisAndButtons {axis = false, inputName = inputString + " StartGame", shortName = "StartGame", inUse = false}}
             }
         };
     }

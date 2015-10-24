@@ -9,6 +9,12 @@ public class SFXPair
 {
     public SFX name;
     public GameObject clip;
+
+    public SFXPair(SFX sfx, GameObject go)
+    {
+        name = sfx;
+        clip = go;
+    }
 }
 
 //to add a new sfx, add it to the enum
@@ -48,7 +54,7 @@ public class SFXManagerBehaviour : MonoBehaviour
 
     private AudioMixer masterMixer;
 
-    private Dictionary<GameObject, GameObject> loopingInstances = new Dictionary<GameObject, GameObject>();
+    private Dictionary<SFXPair, GameObject> loopingInstances = new Dictionary<SFXPair, GameObject>(); //using sfxpair as a way of storinng each instance of a loop
 
     //Here is a private reference only this class can access
     private static SFXManagerBehaviour instance;
@@ -71,8 +77,8 @@ public class SFXManagerBehaviour : MonoBehaviour
         SFXVolumeSliderElement.volumeChanged += volumeChanged;
         masterMixer = MasterAudioManagerBehaviour.Instance.getMasterMixer();
     }
-        
-    private void volumeChanged()
+
+    public void volumeChanged(bool save)
     {
         masterMixer.SetFloat("sfxVol", (SFXVolumeSliderElement.volume - 1) * 80);
     }
@@ -107,30 +113,39 @@ public class SFXManagerBehaviour : MonoBehaviour
         playSFX(getSFXPair(sfx));
     }
 
-    public void loopSound(GameObject id, SFX sfx)
+    public void loopSound(SFXPair pair)
     {
-        if (!loopingInstances.ContainsKey(id))
+        bool contains = false;
+
+        foreach (KeyValuePair<SFXPair, GameObject> loopingInstance in loopingInstances)
+            if ((loopingInstance.Key.name.Equals(pair.name) && loopingInstance.Key.clip.Equals(pair.clip)))
+                contains = true;
+
+        //if we don't have an instance running
+        if (!contains)
         {
-            GameObject loopingInstance = playSFX(getSFXPair(sfx), true);
-            if (loopingInstance != null)
+            GameObject newLoopingInstance = playSFX(getSFXPair(pair.name), true);
+            if (newLoopingInstance != null)
                 //keep track of tthis loopin game object
-                loopingInstances.Add(id, loopingInstance);
+                loopingInstances.Add(pair, newLoopingInstance);
         }
     }
 
-    public void stopLoop(GameObject id, SFX sfx)
+    public void stopLoop(SFXPair pair)
     {
-        if (loopingInstances.ContainsKey(id))
-        {
-            DestroyImmediate(loopingInstances[id]);
-            loopingInstances.Remove(id);
-        }
+        foreach (KeyValuePair<SFXPair, GameObject> loopingInstance in loopingInstances)
+            if ((loopingInstance.Key.name.Equals(pair.name) && loopingInstance.Key.clip.Equals(pair.clip)))
+            {
+                Destroy(loopingInstance.Value);
+                loopingInstances.Remove(loopingInstance.Key);
+                break;
+            }
     }
 
     public void stopAllLoops()
     {
-        foreach (KeyValuePair<GameObject, GameObject> loopingInstance in loopingInstances)
-            DestroyImmediate(loopingInstance.Key);
+        foreach (KeyValuePair<SFXPair, GameObject> loopingInstance in loopingInstances)
+            Destroy(loopingInstance.Value);
 
         loopingInstances.Clear();
     }

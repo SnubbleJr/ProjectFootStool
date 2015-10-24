@@ -10,7 +10,7 @@ public class EndGameScreenManager : MonoBehaviour {
     private const int numberOfRTs = 3;
     private const int frameDelay = 3;   //number of frames that we will hold for
     private int currentFrame = 0;       //count of frames we have held for
-    private const int frameDelayBeforeDisable = 19;
+    private const int frameDelayBeforeDisable = 12;
     private int currentFrameBeforeDisable = 0;
     private Camera camera;
     private bool goingToDisplay = false;

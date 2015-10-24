@@ -43,6 +43,9 @@ public class PlayerSelectionTileBehaviour : MonoBehaviour {
 
     public void setAlpha(float alpha)
     {
+        if (spriteRenderer.color.a == alpha)
+            return;
+
         if (alpha == 0)
             spriteRenderer.enabled = false;
         else

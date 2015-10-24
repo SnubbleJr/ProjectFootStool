@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
 
 public class MenuEntry : MonoBehaviour {
@@ -14,13 +13,14 @@ public class MenuEntry : MonoBehaviour {
     private bool sliderEntry = false;
     private bool selected = false;
 
-    private Text text;
+    private UITextScript uiTextScript;
+
     private Color defaultColor;
 
     void Awake()
     {
-        text = GetComponent<Text>();
-        defaultColor = text.color;
+        uiTextScript = GetComponent<UITextScript>();
+        defaultColor = uiTextScript.getColor();
     }
 
     //get the reset select evenr from Menu Script
@@ -48,12 +48,12 @@ public class MenuEntry : MonoBehaviour {
             //check if selected
             if (selected)
                 //selected code
-                text.color = highlightedColor;
+                uiTextScript.setColor(highlightedColor);
             else
                 //unselected code
-                text.color = defaultColor;
+                uiTextScript.setColor(defaultColor);
         else
-            text.color = Color.grey;
+            uiTextScript.setColor(Color.grey);
     }
 
     void OnGUI()

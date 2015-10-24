@@ -10,10 +10,14 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
 
     public float spacingPercentage = 0.2f;
 
+    [Range(0f, 1f)] public float oppacityScale;
+
     private Color color1;
     private Color color2;
 
-    private List<GameObject> bars = new List<GameObject>();
+    private bool customColors = false;
+
+    private List<SpriteRenderer> bars = new List<SpriteRenderer>();
     private int quantity;
     private int prevQauntity;
 
@@ -23,12 +27,38 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
 
     private float lerpSpeed = 30;
 
+    private Camera mainCamera;
+    private float mainNearClipPlane;
+    private float mainWidth;
+    private float mainHeight;
+
     private AudioSource currentTrack;
-    float samplesPerBar;
+    private float samplesPerBar;
+    private float[] spectrum = new float[1024];
+
+    //Here is a private reference only this class can access
+    private static MusicVisualiserBehaviour instance;
+
+    //This is the public reference that other classes will use
+    public static MusicVisualiserBehaviour Instance
+    {
+        get
+        {
+            //If instance hasn't been set yet, we grab it from the scene!
+            //This will only happen the first time this reference is used.
+            if (instance == null)
+                instance = GameObject.FindObjectOfType<MusicVisualiserBehaviour>();
+            return instance;
+        }
+    }
 
 	// Use this for initialization
 	void Awake ()
     {
+        mainCamera = Camera.main;
+        mainNearClipPlane = mainCamera.nearClipPlane;
+        mainWidth = mainCamera.pixelWidth;
+        mainHeight = mainCamera.pixelHeight;
         barHeight = visualiserBar.GetComponent<SpriteRenderer>().sprite.rect.height;
         barHeightPerUnit = barHeight / visualiserBar.GetComponent<SpriteRenderer>().sprite.pixelsPerUnit;
     }
@@ -55,7 +85,7 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
             {
                 GameObject bar = Instantiate(visualiserBar, getBarPos(bars.Count), Quaternion.identity) as GameObject;
                 bar.transform.SetParent(transform, false);
-                bars.Add(bar);
+                bars.Add(bar.GetComponent<SpriteRenderer>());
             }
         }
     }
@@ -75,9 +105,9 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
     private void scaleBars()
     {
         float totalSpacing = (spacingPercentage * (bars.Count - 1)) + 1;    //+ 1 so we hve space at top and bottom
-        barScale = (Camera.main.pixelHeight / (bars.Count + totalSpacing)) * barHeightPerUnit;
+        barScale = (mainHeight / (bars.Count + totalSpacing)) * barHeightPerUnit;
 
-        foreach (GameObject bar in bars)
+        foreach (SpriteRenderer bar in bars)
             bar.transform.localScale = Vector3.Lerp(bar.transform.localScale, new Vector3(0.5f, barScale, 1), Time.deltaTime * lerpSpeed);
     }
 
@@ -96,10 +126,10 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
     private Vector3 getBarPos(int i)
     {
         float baseSpace = barScale / barHeightPerUnit;       //the pixelehight of the current bar size
-        float nearClipPlane = Camera.main.nearClipPlane*2;
+        float nearClipPlane = mainNearClipPlane*2;
         float x0 = Screen.width / 2;
 
-        return Camera.main.ScreenToWorldPoint(new Vector3(Camera.main.pixelWidth / 2, Camera.main.pixelHeight - (((baseSpace / 2) * (((i + 1) * 2) - 1)) + ((i + 1) * (baseSpace * spacingPercentage))), nearClipPlane));
+        return mainCamera.ScreenToWorldPoint(new Vector3(mainWidth / 2, mainHeight - (((baseSpace / 2) * (((i + 1) * 2) - 1)) + ((i + 1) * (baseSpace * spacingPercentage))), nearClipPlane));
     }
 
     private void beatDetected(bool offBeat)
@@ -110,6 +140,9 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
 
     private void updateQuantity()
     {
+        mainWidth = mainCamera.pixelWidth;
+        mainHeight = mainCamera.pixelHeight;
+
         quantity = (((int)Mathf.PingPong(Time.time*4, maxQuantity - minQuantity)) + minQuantity);
         //quantity = maxQuantity;
 
@@ -124,12 +157,14 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
     private void colorBars()
     {
         for (int i = 0; i < bars.Count; i++)
-            bars[i].GetComponent<SpriteRenderer>().color = Color.Lerp(color1, color2, (float)i / (float)bars.Count);
+            bars[i].color = Color.Lerp(color1, color2, (float)i / (float)bars.Count);
     }
 
 	// Update is called once per frame
 	void Update ()
     {
+        spacingPercentage = 20f / mainCamera.orthographicSize;
+
         scaleBars();
         positionBars();
         colorBars();
@@ -141,6 +176,9 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
          * \/   moving the bars to the music
          * 
          * */
+        
+        if (currentTrack == null)
+            setupTrack();
 
         stretchBarsToMusic();
     }
@@ -158,12 +196,8 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
     private void stretchBarsToMusic()
     {
         if (currentTrack == null)
-        {
-            setupTrack();
             return;
-        }
 
-        float[] spectrum = new float[1024];
         currentTrack.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
 
         if (bars.Count > 0)
@@ -207,6 +241,7 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
     public void setColor1(Color color)
     {
         color1 = color;
+        color1.a *= oppacityScale;
     }
 
     public Color getColor2()
@@ -217,5 +252,16 @@ public class MusicVisualiserBehaviour : MonoBehaviour {
     public void setColor2(Color color)
     {
         color2 = color;
+        color2.a *= oppacityScale;
+    }
+
+    public bool getCustomColors()
+    {
+        return customColors;
+    }
+
+    public void setCustomColors(bool val)
+    {
+        customColors = val;
     }
 }

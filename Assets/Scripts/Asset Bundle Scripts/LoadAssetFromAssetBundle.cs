@@ -8,6 +8,8 @@ class LoadAssetFromAssetBundle : MonoBehaviour
 {
     public Object Obj;
 
+    private AssetBundle assetBundle;
+
     //Here is a private reference only this class can access
     private static LoadAssetFromAssetBundle instance;
 
@@ -28,9 +30,28 @@ class LoadAssetFromAssetBundle : MonoBehaviour
         Obj = null;
 
 #if UNITY_EDITOR
-        Obj = UnityEditor.AssetDatabase.LoadAssetAtPath("Assets/" + localURL + asset, typeof(T));
-        yield return null;
+        //if version is -1, then it's a default asset
+        if (version < 0)
+        {
+            Obj = UnityEditor.AssetDatabase.LoadAssetAtPath("Assets/" + localURL + asset, typeof(T));
+            yield return null;
+        }
+        else
+        {
+            // Wait for the Caching system to be ready
+            while (!Caching.ready)
+                yield return null;
 
+            // Start the download
+            using (WWW www = WWW.LoadFromCacheOrDownload(url, version))
+            {
+                yield return www;
+                if (www.error != null)
+                    Debug.LogError("WWW download:" + www.error);
+                assetBundle = www.assetBundle;
+
+            } // memory is freed from the web stream (www.Dispose() gets called implicitly)
+        }
 #else
         // Wait for the Caching system to be ready
         while (!Caching.ready)
@@ -41,12 +62,22 @@ class LoadAssetFromAssetBundle : MonoBehaviour
             yield return www;
             if (www.error != null)
                 Debug.LogError("WWW download:" + www.error);
-            AssetBundle assetBundle = www.assetBundle;
-            Obj = assetBundle.LoadAsset(asset, typeof(T));
-            // Unload the AssetBundles compressed contents to conserve memory
-            //bundle.Unload(false);
+            assetBundle = www.assetBundle;
 
         } // memory is freed from the web stream (www.Dispose() gets called implicitly)
 #endif
+    }
+
+    public AssetBundle getBundle()
+    {
+        if (assetBundle != null)
+            return assetBundle;
+        else
+            return null;
+    }
+
+    public void finishedWithBundle()
+    {
+        assetBundle.Unload(false);
     }
 }

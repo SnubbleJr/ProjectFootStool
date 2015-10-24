@@ -22,6 +22,15 @@ public class UITextScript : MonoBehaviour {
 
     public void setColor(Color color)
     {
-        text.color = color;
+        if (color != text.color)
+            text.color = color;
+    }
+
+    public Color getColor()
+    {
+        if (text == null)
+            text = GetComponent<Text>();
+
+        return text.color;
     }
 }
