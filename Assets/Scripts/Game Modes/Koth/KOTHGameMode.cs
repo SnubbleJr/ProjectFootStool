@@ -108,8 +108,6 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
     }
 
     //here we change each player's score based on their location
-    //instead of having to calcuate weither a player is not in a trigger (to decrease their score)
-    //we just decrease every players score by default
     //and increase by 2 if only one person is inside
     //by 1 if more than 1 is inside
     private void timerTick()
@@ -131,9 +129,6 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
         //and set their gui (done in tick so we don't get flitting between this and update)
         foreach (PlayerControl playerControl in playerControls)
         {
-            if (playerControl.getScore() > 0)
-                playerControl.decreaseScore();
-
             GameModeCanavsBehaviour.Instance.setPlayerScore(playerControl.getPlayerNo(), playerControl.getScore());
         }
     }
@@ -150,10 +145,10 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
             case 0:
                 return;
             case 1:
-                scoreToAdd = 2;
+                scoreToAdd = 1;
                 break;
             default:
-                scoreToAdd = 1;
+                scoreToAdd = 0;
                 break;
         }
 
@@ -165,7 +160,7 @@ public class KOTHGameMode : MonoBehaviour, IGameMode {
                 PlayerControl playerControl = player.GetComponent<PlayerControl>();
 
                 //if we are close to winning, and are the only one in the ring, then add a warning sound
-                if (playerControl.getScore() >= (timeToWin - 4) && scoreToAdd == 2)
+                if (playerControl.getScore() >= (timeToWin - 4) && scoreToAdd == 1)
                     playerCloseToWinning = true;
 
                 if (playerControl.getScore() >= timeToWin)

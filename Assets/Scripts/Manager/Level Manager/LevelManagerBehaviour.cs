@@ -123,7 +123,7 @@ public class LevelManagerBehaviour : MonoBehaviour {
     {
         levels = GameObject.FindGameObjectsWithTag("Level");
 
-        if (levels != null)
+        if (levels.Length != 0)
             //disable all
             foreach (GameObject level in levels)
                 level.GetComponent<LevelBehaviour>().setLevel(false);

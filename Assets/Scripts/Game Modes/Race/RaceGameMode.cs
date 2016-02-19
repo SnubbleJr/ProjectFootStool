@@ -43,8 +43,10 @@ public class RaceGameMode : MonoBehaviour, IGameMode {
 
     void OnDisable()
     {
-        levelMover.enabled = false;
-        terrainGenerator.enabled = false;
+        if (levelMover)
+            levelMover.enabled = false;
+        if (terrainGenerator)
+            terrainGenerator.enabled = false;
     }
 
     private void tryStartGame()

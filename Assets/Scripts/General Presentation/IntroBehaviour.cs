@@ -19,23 +19,27 @@ public class IntroBehaviour : MonoBehaviour {
 
     private SpriteRenderer spriteRenderer;
 
+    private AudioSource audioSource;
+
 	// Use this for initialization
     void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
+        audioSource.clip = sound;
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.color = Color.clear;
         currentColor = spriteRenderer.color;
-
+        
         fadeIn();
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
+        currentTime += Time.deltaTime;
         if (fadingIn)
         {
             currentColor = Color.Lerp(origColor, targetColor, (currentTime / fadeTimeIn));
-            currentTime += Time.deltaTime;
             if (currentTime >= fadeTimeIn)
             {
                 currentColor = targetColor;
@@ -48,7 +52,6 @@ public class IntroBehaviour : MonoBehaviour {
         if (fadingOut)
         {
             currentColor = Color.Lerp(origColor, targetColor, (currentTime / fadeTimeIn));
-            currentTime += Time.deltaTime;
             if (currentTime >= fadeTimeIn)
             {
                 currentColor = targetColor;
@@ -76,6 +79,7 @@ public class IntroBehaviour : MonoBehaviour {
     private void playSound()
     {
         targetColor = Color.clear;
+        audioSource.Play();
     }
 
     private void fadeOut()

@@ -326,8 +326,13 @@ public class PlayerSelectionScript : MonoBehaviour {
 
         yield return null;
         
-        //the currently selected sprite will get the currently selected color
-        spriteTiles[5].setColor(colorTiles[2].getColor());
+        PlayerColor color = colorTiles[2].getColor();
+
+        //sprites and bg selector will get the currently selected color
+        foreach (PlayerSelectionTileBehaviour spriteTile in spriteTiles)
+            spriteTile.setColor(color);
+
+        spriteRenderer.color = color.color;
     }
 
     private void readyUp()
@@ -381,7 +386,7 @@ public class PlayerSelectionScript : MonoBehaviour {
 
         updateTeam();
 
-        setActive(true);
+        setActive(true, true);
     }
 
     private void rotateWindow()
@@ -549,8 +554,13 @@ public class PlayerSelectionScript : MonoBehaviour {
     {
         return active;
     }
-
+    
     public void setActive(bool value)
+    {
+        setActive(value, false);
+    }
+
+    public void setActive(bool value, bool wasReady)
     {
         if (spriteTiles == null || colorTiles == null)
             return;
@@ -566,24 +576,29 @@ public class PlayerSelectionScript : MonoBehaviour {
 
         if (value)
         {
-            //check to see if we can still use the currently selected
-            int newSprite = manager.tryGetNextSprite(currentSprite, 0);
-            if (newSprite == -1)
+            //we use was ready as an overide check - if we just unredayed, then we don't need to check!
+            if (!wasReady)
             {
-                //manual moving of the tiles with unsetting anything
-                currentSprite = manager.tryGetNextSprite(currentSprite, 1);
-                moveSpriteWheel(0, false);
+                //check to see if we can still use the currently selected
+                int newSprite = manager.tryGetNextSprite(currentSprite, 0);
+                if (newSprite == -1)
+                {
+                    //manual moving of the tiles with unsetting anything
+                    currentSprite = manager.tryGetNextSprite(currentSprite, 1);
+                    moveSpriteWheel(0, false);
+                }
+                int newColor = manager.tryGetNextColor(currentColor, 0);
+                if (newColor == -1)
+                {
+                    currentColor = manager.tryGetNextColor(currentColor, 1);
+                    moveColorWheel(0, false);
+                }
             }
-            int newColor = manager.tryGetNextColor(currentColor, 0);
-            if (newColor == -1)
-            {
-                currentColor = manager.tryGetNextColor(currentColor, 1);
-                moveColorWheel(0, false);
-            }
+            //else, nothing
         }
         else
         {
-            //set the tiles we were on to value
+            //return colours and sprites
             manager.returnPlayerSprite(currentSprite);
             manager.returnPlayerColor(currentColor);
         }

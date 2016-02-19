@@ -22,13 +22,8 @@ public class CustomLevelParser : MonoBehaviour {
 
     private GameObject parsedObject;
 
-    private int parseCount;
-    private const int parsesPerUpdate = 35;
-
     public IEnumerator parseObject(GameObject shell)
     {
-        parseCount++;
-        
         //make a new object, and one by one fill it out with the shell blueprint
         GameObject newGO = new GameObject();
         newGO.SetActive(false);
@@ -48,18 +43,12 @@ public class CustomLevelParser : MonoBehaviour {
         //then add parsed children back
         foreach (Transform shellChild in shell.transform)
         {
-            if (parseCount > parsesPerUpdate)
-            {
-                parseCount = 0;
-                yield return StartCoroutine(parseObject(shellChild.gameObject));
-            }
-            else
-                StartCoroutine(parseObject(shellChild.gameObject));
+            StartCoroutine(parseObject(shellChild.gameObject));
 
             if (parsedObject != null)
             {
-                parsedObject.SetActive(false);
                 parsedObject.transform.SetParent(newGO.transform, true);
+                parsedObject.SetActive(false);
                 parsedObject.transform.localScale = shellChild.transform.localScale;
                 parsedObject.transform.localPosition = shellChild.transform.localPosition;
             }
@@ -195,10 +184,9 @@ public class CustomLevelParser : MonoBehaviour {
     {
         yield return StartCoroutine(parseObject(shell));
         parsedObject.transform.SetParent(transform, false);
+        
         parsedObject.SetActive(true);
-
-        Debug.Log("Loaded level " + shell.name);
-
+        
         LevelManagerBehaviour.Instance.findLevels();
 
         yield return null;

@@ -2,11 +2,11 @@ Mono path[0] = 'C:/Users/Edd/Documents/GitHub/ProjectFootStool/Build/v1.6.0/PCx8
 Mono path[1] = 'C:/Users/Edd/Documents/GitHub/ProjectFootStool/Build/v1.6.0/PCx86/ProjectFootStool_Data/Mono'
 Mono config path = 'C:/Users/Edd/Documents/GitHub/ProjectFootStool/Build/v1.6.0/PCx86/ProjectFootStool_Data/Mono/etc'
 PlayerConnection initialized from C:/Users/Edd/Documents/GitHub/ProjectFootStool/Build/v1.6.0/PCx86/ProjectFootStool_Data (debug = 0)
-PlayerConnection initialized network socket : 0.0.0.0 55281
-Broadcasting "[IP] 169.254.80.80 [Port] 55281 [Flags] 3 [Guid] 1238794175 [EditorId] 398954952 [Version] 1048832 [Id] WindowsPlayer(EddNovatech) [Debug] 0" to [169.254.255.255:54997]...
-Waiting for connection from host on [169.254.80.80:55281]...
-PlayerConnection accepted from [169.254.80.80] handle:0x144
-PlayerConnection already initialized - listening to [169.254.80.80:55281]
+PlayerConnection initialized network socket : 0.0.0.0 55121
+Broadcasting "[IP] 169.254.80.80 [Port] 55121 [Flags] 3 [Guid] 2405314092 [EditorId] 398954952 [Version] 1048832 [Id] WindowsPlayer(EddNovatech) [Debug] 0" to [169.254.255.255:54997]...
+Waiting for connection from host on [169.254.80.80:55121]...
+Timed out. Continuing without host connection.
+PlayerConnection already initialized - listening to [169.254.80.80:55121]
 Initialize engine version: 5.1.1f1 (2046fc06d4d8)
 GfxDevice: creating device client; threaded=1
 Direct3D:
@@ -29,7 +29,7 @@ Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.6.0\P
 Loading C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.6.0\PCx86\ProjectFootStool_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
 Platform assembly: C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.6.0\PCx86\ProjectFootStool_Data\Managed\UnityEngine.Analytics.dll (this message is harmless)
 Loading C:\Users\Edd\Documents\GitHub\ProjectFootStool\Build\v1.6.0\PCx86\ProjectFootStool_Data\Managed\UnityEngine.Analytics.dll into Unity Child Domain
-- Completed reload, in  0.063 seconds
+- Completed reload, in  0.083 seconds
 desktop: 1366x768 60Hz; virtual: 1366x768 at 0,0
 <RI> Initializing input.
 <RI> Input initialized.
@@ -53,12 +53,12 @@ The referenced script on this Behaviour is missing!
 (Filename: C:/buildslave/unity/build/Runtime/Mono/MonoBehaviour.cpp Line: 1715)
 
 Unloading 3 Unused Serialized files (Serialized files now loaded: 0)
-UnloadTime: 1.929157 ms
-System memory in use before: 183.1 MB.
-System memory in use after: 182.7 MB.
+UnloadTime: 1.278037 ms
+System memory in use before: 134.7 MB.
+System memory in use after: 134.3 MB.
 
 Unloading 11 unused Assets to reduce memory usage. Loaded Objects now: 2954.
-Total: 80.015915 ms (FindLiveObjects: 57.047070 ms CreateObjectMapping: 1.181142 ms MarkObjects: 4.111622 ms  DeleteObjects: 0.215536 ms)
+Total: 80.587791 ms (FindLiveObjects: 11.910831 ms CreateObjectMapping: 0.300932 ms MarkObjects: 5.412671 ms  DeleteObjects: 0.076362 ms)
 
 Loaded  in C:/Users/Edd/Documents/GitHub/ProjectFootStool/Build/v1.6.0/PCx86/ProjectFootStool_Data/AssetBundles/Music
 UnityEngine.Debug:Internal_Log(Int32, String, Object)
@@ -163,4 +163,3 @@ UnityEngine.MonoBehaviour:StartCoroutine(IEnumerator) (at C:\buildslave\unity\bu
  
 (Filename: C:/Users/Edd/Documents/GitHub/ProjectFootStool/Assets/Scripts/Manager/Level Manager/CustomLevelParser.cs Line: 139)
 
-Waiting for finish
